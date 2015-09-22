@@ -1,3 +1,4 @@
+"use strict";
 function GMap()
 {
     this.width = 0;
@@ -43,10 +44,12 @@ function(array)
 GMap.prototype.applyMapConfiguration = 
 function(mapConfiguration)
 {
+    this.width = mapConfiguration.width;
+    this.height = mapConfiguration.height;
     var currentIndex = 0;
-    for(i = 0; i < GTerrain.size; i++)
+    for(var i = 0; i < GTerrain.size; i++)
     {
-        for(j = 0; j < mapConfiguration.terrain[i]; j++)
+        for(var j = 0; j < mapConfiguration.terrain[i]; j++)
         {
             this.map[currentIndex] = i;
             currentIndex += 1;

@@ -1,3 +1,4 @@
+"use strict";
 function GRect(x, y, w, h)
 {
     this.x = x;

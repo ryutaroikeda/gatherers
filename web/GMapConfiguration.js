@@ -1,3 +1,4 @@
+"use strict";
 function GMapConfiguration(width, height, plains, wood, horse, iron, mountain)
 {
     this.width = width;
