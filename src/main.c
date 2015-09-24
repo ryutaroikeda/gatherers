@@ -2,8 +2,8 @@
 
 int main(int argc, char* argv[])
 {
-  debug("Hello, world!");
+  debug("%d %s", argc, argv[0]);
   return 0;
-error:
-  return -1;
+// error:
+  // return -1;
 }
