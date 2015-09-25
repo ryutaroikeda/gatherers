@@ -23,15 +23,15 @@ static const int unitLife[GTUnitType_Size] =
 //   0, 1, 1, 1, 1, 0
 // };
 
-// static const int unitMovement[GTUnitType_Size] =
-// {
-//   0, 1, 1, 2, 1, 1
-// };
+static const int unitMovement[GTUnitType_Size] =
+{
+  0, 1, 1, 2, 1, 1
+};
 
-// static const int unitCanAttack[GTUnitType_Size] =
-// {
-//   0, 0, 0, 1, 1, 0
-// };
+static const int unitCanAttack[GTUnitType_Size] =
+{
+  0, 0, 0, 1, 1, 0
+};
 
 // static const int unitRange[GTUnitType_Size] =
 // {
@@ -52,6 +52,7 @@ int GTStack_Init(GTStack* s, GTStackEntry* entries, size_t size)
 {
   s->size = size;
   s->ptr = 0;
+  s->err = GTStackError_None;
   s->top = entries;
   return 0;
 }
@@ -65,6 +66,7 @@ int GTStack_PushExplicit(GTStack* s, int val, int* addr)
   s->top++;
   return 0;
   error:
+  s->err = GTStackError_Overflow;
   return -1;
 }
 
@@ -76,6 +78,7 @@ int GTStack_Pop(GTStack* s)
   *(s->top->addr) = s->top->val;
   return 0;
   error:
+  s->err = GTStackError_Underflow;
   return -1;
 }
 
@@ -86,6 +89,7 @@ int GTStack_Peek(GTStack* s, GTStackEntry* e)
   e->addr = (s->top - 1)->addr;
   return 0;
   error:
+  s->err = GTStackError_EmptyPeek;
   return -1;
 }
 
@@ -129,31 +133,50 @@ int GTBoard_Init(GTBoard* b)
   // return -1;
 }
 
-int GTBoard_IsValid(GTBoard* b, int pos)
+int GTBoard_IsValid(const GTBoard* b, int pos)
 {
   return b->board[pos] != GTBoard_Invalid;
 }
 
-int GTBoard_IsEmpty(GTBoard* b, int pos)
+int GTBoard_IsEmpty(const GTBoard* b, int pos)
 {
   return (GTBoard_IsValid(b, pos) && b->board[pos] == GTBoard_Empty);
 }
 
-int GTBoard_IsUnit(GTBoard* b, int pos)
+int GTBoard_IsUnit(const GTBoard* b, int pos)
 {
   return (0 <= b->board[pos] && b->board[pos] < b->unitId
     && GTBoard_IsValid(b, pos));
 }
 
-int GTBoard_IsVisible(GTBoard* b, int pos)
+int GTBoard_IsVisible(const GTBoard* b, int pos)
 {
   return b->tiles[pos].isVisible;
 }
 
+int GTBoard_IsValidUnitId(const GTBoard* b, int unit)
+{
+  return (0 <= unit && unit < b->unitId);
+}
+
+int GTBoard_CanMoveUnit(const GTBoard* b, int unit, GTDirection d)
+{
+  if (d == GTDirection_None) { return 1; }
+  if (!GTBoard_IsValidUnitId(b, unit)) { return 0; }
+  const GTUnit* u = &(b->units[unit]);
+  int pos = u->pos + d;
+  if (!GTBoard_IsValid(b, pos)) { return 0; }
+  if (!GTBoard_IsEmpty(b, pos) && !unitCanAttack[u->type]) { return 0; }
+  return 1;
+}
+
 int GTBoard_RevealTile(GTBoard* b, int pos)
 {
+  check(GTBoard_IsValid(b, pos), "invalid pos");
   b->tiles[pos].isVisible = 1;
   return 0;
+  error:
+  return -1;
 }
 
 int GTBoard_CreateUnit(GTBoard* b, GTPlayer p, GTUnitType t, int pos)
@@ -181,10 +204,73 @@ int GTBoard_CreateUnit(GTBoard* b, GTPlayer p, GTUnitType t, int pos)
   return -1;
 }
 
-// int GTBoard_RemoveUnit(GTBoard* b, int pos)
-// {
-//   check(GTBoard_IsUnit(b, pos) == 1, "not a unit");
-//   return 0;
-// }
+int GTBoard_ResetUnitMovement(GTBoard* b, int unit)
+{
+  check(GTBoard_IsValidUnitId(b, unit), "invalid unit");
+  GTUnit* u = &b->units[unit];
+  // GTStack_Push(&(b->stack), u->movement);
+  u->movement = unitMovement[u->type];
+  return 0;
+  error:
+  return -1;
+}
+
+int GTBoard_RemoveUnit(GTBoard* b, int unit)
+{
+  check(GTBoard_IsValidUnitId(b, unit), "invalid unit");
+  GTUnit* u = &b->units[unit];
+  // GTStack_Push(&(b->stack), b->board[u->pos]);
+  // GTStack_Push(&(b->stack), u->life);
+  // GTStack_Push(&(b->stack), u->movement);
+  b->board[u->pos] = GTBoard_Empty;
+  u->life = 0;
+  u->movement = 0;
+  return 0;
+  error:
+  return -1;
+}
+
+int GTBoard_DamageUnit(GTBoard* b, int unit, int damage)
+{
+  check(GTBoard_IsValidUnitId(b, unit), "invalid unit");
+  GTUnit* u = &b->units[unit];
+  u->life -= damage;
+  if(u->life <= 0)
+  {
+    GTBoard_RemoveUnit(b, unit);
+  }
+  return 0;
+  error:
+  return -1;
+}
+
+int GTBoard_MoveUnit(GTBoard* b, int unit, GTDirection d)
+{
+  check(GTBoard_CanMoveUnit(b, unit, d), "cannot move unit");
+  GTUnit* u = &b->units[unit];
+  int pos = u->pos + d;
+  if (!GTBoard_IsEmpty(b, pos))
+  {
+    GTBoard_DamageUnit(b, b->board[pos], 1);
+  }
+  if (GTBoard_IsEmpty(b, pos))
+  {
+    // GTStack_Push(&(b->stack), b->board[pos]);
+    // GTStack_Push(&(b->stack), b->board[u->pos]);
+    // GTStack_Push(&(b->stack), u->pos);
+    // GTStack_Push(&(b->stack), u->movement);
+    b->board[pos] = unit;
+    b->board[u->pos] = GTBoard_Empty;
+    u->pos = pos;
+    u->movement--;
+    GTBoard_RevealTile(b, pos);
+  }
+  if (b->tiles[pos].type == GTTileType_Mountain) { u->movement--; }
+  return 0;
+  error:
+  b->err = GTBoardError_CannotMoveUnit;
+  return -1;
+}
+
 
 

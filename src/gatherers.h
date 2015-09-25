@@ -57,33 +57,6 @@ struct GTUnit
 };
 struct_type(GTUnit);
 
-struct GTStackEntry
-{
-  int val;
-  int* addr;
-};
-struct_type(GTStackEntry);
-
-struct GTStack
-{
-  // maximum stack depth
-  int size;
-  // index of the top of the stack
-  int ptr;
-  // entry of the top of the stack
-  GTStackEntry* top;
-};
-struct_type(GTStack);
-
-enum GTStackCode
-{
-  GTStackCode_None,
-  GTStackCode_BeginPlay,
-  GTStackCode_BeginTurn,
-  GTStackCode_Size
-};
-enum_type(GTStackCode);
-
 enum GTDirection
 {
   GTDirection_None,
@@ -94,6 +67,45 @@ enum GTDirection
   GTDirection_Size
 };
 enum_type(GTDirection);
+
+enum GTStackCode
+{
+  GTStackCode_None,
+  GTStackCode_BeginPlay,
+  GTStackCode_BeginTurn,
+  GTStackCode_Size
+};
+enum_type(GTStackCode);
+
+enum GTStackError
+{
+  GTStackError_None,
+  GTStackError_Underflow,
+  GTStackError_Overflow,
+  GTStackError_EmptyPeek,
+  GTStackError_Size
+};
+enum_type(GTStackError);
+
+struct GTStackEntry
+{
+  int val;
+  int* addr;
+};
+struct_type(GTStackEntry);
+
+struct GTStack
+{
+  // entry of the top of the stack
+  GTStackEntry* top;
+  // maximum stack depth
+  int size;
+  // index of the top of the stack
+  int ptr;
+  // error number
+  GTStackError err;
+};
+struct_type(GTStack);
 
 int GTStack_Init(GTStack* s, GTStackEntry* entries, size_t size);
 
@@ -113,6 +125,14 @@ int GTStack_Peek(GTStack* s, GTStackEntry* e);
 int GTStack_BeginPlay(GTStack* s);
 
 int GTStack_BeginTurn(GTStack* s);
+
+enum GTBoardError
+{
+  GTBoardError_None,
+  GTBoardError_CannotMoveUnit,
+  GTBoardError_Size
+};
+enum_type(GTBoardError);
 
 enum
 {
@@ -147,21 +167,40 @@ struct GTBoard
   int population[GTPlayer_Size][GTUnitType_Size];
   // index of next free unit
   int unitId;
+  // error number
+  GTBoardError err;
 };
 struct_type(GTBoard);
 
+//
+// Unless otherwise stated, the functions below return 0 on success and a
+// negative integer on failure.
+//
+
 int GTBoard_Init(GTBoard* b);
 // return 1 if .board[pos] is valid
-int GTBoard_IsValid(GTBoard* b, int pos);
+int GTBoard_IsValid(const GTBoard* b, int pos);
 // return 1 if .board[pos] is empty
-int GTBoard_IsEmpty(GTBoard* b, int pos);
+int GTBoard_IsEmpty(const GTBoard* b, int pos);
 // return 1 if .board[pos] is a unit
-int GTBoard_IsUnit(GTBoard* b, int pos);
+int GTBoard_IsUnit(const GTBoard* b, int pos);
 // return 1 if .tiles[pos] is visible
-int GTBoard_IsVisible(GTBoard* b, int pos);
+int GTBoard_IsVisible(const GTBoard* b, int pos);
+// return 1 if unit was allocated
+int GTBoard_IsValidUnitId(const GTBoard* b, int unit);
+// return 1 if unit can move d or attack d
+int GTBoard_CanMoveUnit(const GTBoard* b, int unit, GTDirection d);
 
 int GTBoard_RevealTile(GTBoard* b, int pos);
 
 int GTBoard_CreateUnit(GTBoard* b, GTPlayer p, GTUnitType t, int pos);
+
+int GTBoard_ResetUnitMovement(GTBoard* b, int unit);
+
+int GTBoard_RemoveUnit(GTBoard* b, int unit);
+
+int GTBoard_DamageUnit(GTBoard* b, int unit, int damage);
+
+int GTBoard_MoveUnit(GTBoard* b, int unit, GTDirection d);
 
 #endif
