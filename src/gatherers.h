@@ -1,24 +1,39 @@
 #ifndef __gatherers_h__
 #define __gatherers_h__
 
-#include <stdint.h>
+#include <stddef.h>
 
 #define enum_type(t) typedef enum t t
 #define struct_type(t) typedef struct t t
 
-enum GTTile
+enum GTTileType
 {
-  GTTile_None,
-  GTTile_Plains,
-  GTTile_Wood,
-  GTTile_Horse,
-  GTTile_Iron,
-  GTTile_Lake,
-  GTTile_Mountain,
-  GTTile_Size
+  GTTileType_None,
+  GTTileType_Plains,
+  GTTileType_Wood,
+  GTTileType_Horse,
+  GTTileType_Iron,
+  GTTileType_Lake,
+  GTTileType_Mountain,
+  GTTileType_Size
 };
+enum_type(GTTileType);
 
-enum_type(GTTile);
+struct GTTile
+{
+  GTTileType type;
+  int isVisible;
+};
+struct_type(GTTile);
+
+enum GTPlayer
+{
+  GTPlayer_None,
+  GTPlayer_Black,
+  GTPlayer_White,
+  GTPlayer_Size
+};
+enum_type(GTPlayer);
 
 enum GTUnitType
 {
@@ -30,17 +45,74 @@ enum GTUnitType
   GTUnitType_Castle,
   GTUnitType_Size
 };
-
 enum_type(GTUnitType);
 
 struct GTUnit
 {
+  GTPlayer color;
   GTUnitType type;
-  uint8_t life;
-  uint8_t movement;
+  int pos;
+  int life;
+  int movement;
 };
-
 struct_type(GTUnit);
+
+struct GTStackEntry
+{
+  int val;
+  int* addr;
+};
+struct_type(GTStackEntry);
+
+struct GTStack
+{
+  // maximum stack depth
+  int size;
+  // index of the top of the stack
+  int ptr;
+  // entry of the top of the stack
+  GTStackEntry* top;
+};
+struct_type(GTStack);
+
+enum GTStackCode
+{
+  GTStackCode_None,
+  GTStackCode_BeginPlay,
+  GTStackCode_BeginTurn,
+  GTStackCode_Size
+};
+enum_type(GTStackCode);
+
+enum GTDirection
+{
+  GTDirection_None,
+  GTDirection_North,
+  GTDirection_East,
+  GTDirection_South,
+  GTDirection_West,
+  GTDirection_Size
+};
+enum_type(GTDirection);
+
+int GTStack_Init(GTStack* s, GTStackEntry* entries, size_t size);
+
+int GTStack_PushExplicit(GTStack* s, int val, int* addr);
+
+#define GTStack_Push(s, v) GTStack_PushExplicit(s, (v), (int*)&(v))
+
+// #define GTStack_PushAndSet(s, u, v) do \
+// { GTStack_Push(s, (u)); \
+//   u = (v); \
+// } while(0)
+
+int GTStack_Pop(GTStack* s);
+
+int GTStack_Peek(GTStack* s, GTStackEntry* e);
+
+int GTStack_BeginPlay(GTStack* s);
+
+int GTStack_BeginTurn(GTStack* s);
 
 enum
 {
@@ -51,28 +123,45 @@ enum
   GTBoard_Size = GTBoard_WidthMax * GTBoard_HeightMax,
   GTBoard_ValidMin = GTBoard_WidthMax + 1,
   GTBoard_InvalidMin = GTBoard_Size - GTBoard_WidthMax - 1,
+  // for .board
+  GTBoard_Empty = -1,
+  GTBoard_Invalid = -2,
 
-  // do not recycle units
-  // this is to speed up the ai
-  GTBoard_UnitSize = 1000
+  // do not recycle units to avoid having to search
+  GTBoard_UnitSize = 1000,
+  GTBoard_StackSize = 10000
 };
 
 struct GTBoard
 {
+  // store state of units
   GTUnit units[GTBoard_UnitSize];
   // store the tile of each position
   GTTile tiles[GTBoard_Size];
+  // store changes to the game state
+  GTStackEntry entries[GTBoard_StackSize];
+  GTStack stack;
   // store the index of the unit on each position
-  uint8_t board[GTBoard_Size];
+  int board[GTBoard_Size];
+  // number of units for each unit type
+  int population[GTPlayer_Size][GTUnitType_Size];
+  // index of next free unit
   int unitId;
 };
-
 struct_type(GTBoard);
 
 int GTBoard_Init(GTBoard* b);
+// return 1 if .board[pos] is valid
+int GTBoard_IsValid(GTBoard* b, int pos);
+// return 1 if .board[pos] is empty
+int GTBoard_IsEmpty(GTBoard* b, int pos);
+// return 1 if .board[pos] is a unit
+int GTBoard_IsUnit(GTBoard* b, int pos);
+// return 1 if .tiles[pos] is visible
+int GTBoard_IsVisible(GTBoard* b, int pos);
 
-int GTBoard_CreateUnit(GTBoard* b, GTUnitType t, int pos);
+int GTBoard_RevealTile(GTBoard* b, int pos);
 
-
+int GTBoard_CreateUnit(GTBoard* b, GTPlayer p, GTUnitType t, int pos);
 
 #endif

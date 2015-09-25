@@ -5,6 +5,17 @@
 #include <errno.h>
 #include <string.h>
 
+#if defined __GNUC__
+#define __FUNC__ __PRETTY_FUNCTION__
+#elif (__STDC_VERSION__ >= 199901)
+#define __FUNC__ __func__
+#else
+#define __FUNC__ "<unknown>"
+#endif
+
+#ifdef NDEBUG
+#define debug(...)
+#else
 //
 // ##__VA_ARGS__ is not portable. This is problematic when __VA_ARGS__ consists
 // of a format string with no argument. For example:
@@ -18,12 +29,8 @@
 //
 // The workaround here is to use multiple printf statements.
 //
-
-#ifdef NDEBUG
-#define debug(...)
-#else
 #define debug(...) \
-do { fprintf(stderr, "DEBUG %s:%d: ", __FILE__, __LINE__); \
+do { fprintf(stderr, "DEBUG %s:%d:%s ", __FILE__, __LINE__, __FUNC__); \
      fprintf(stderr, __VA_ARGS__); \
      fprintf(stderr, "\n"); \
    } while(0)
@@ -32,21 +39,21 @@ do { fprintf(stderr, "DEBUG %s:%d: ", __FILE__, __LINE__); \
 #define clean_errno() (errno == 0 ? "None" : strerror(errno))
 
 #define log_err(...) \
-do { fprintf(stderr, "[ERROR] (%s:%d: errno: %s) ", \
-     __FILE__, __LINE__, clean_errno()); \
+do { fprintf(stderr, "[ERROR] (%s:%d:%s errno: %s) ", \
+     __FILE__, __LINE__, __FUNC__, clean_errno()); \
      fprintf(stderr, __VA_ARGS__); \
      fprintf(stderr, "\n"); \
    } while(0)
 
 #define log_warn(...) \
-do { fprintf(stderr, "[WARN] (%s:%d: errno: %s) ", \
-     __FILE__, __LINE__, clean_errno()); \
+do { fprintf(stderr, "[WARN] (%s:%d:%s errno: %s) ", \
+     __FILE__, __LINE__, __FUNC__, clean_errno()); \
      fprintf(stderr, __VA_ARGS__); \
      fprintf(stderr, "\n"); \
    } while(0)
 
 #define log_info(...) \
-do { fprintf(stderr, "[INFO] (%s:%d) ", __FILE__, __LINE__); \
+do { fprintf(stderr, "[INFO] (%s:%d:%s) ", __FILE__, __LINE__, __FUNC__); \
      fprintf(stderr, __VA_ARGS__); \
      fprintf(stderr, "\n"); \
    } while(0)

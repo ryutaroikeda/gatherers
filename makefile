@@ -1,5 +1,5 @@
 DEBUGGER=valgrind
-CFLAGS=-g -O2 -Wextra -Wall -pedantic -Isrc $(OPTFLAGS)
+CFLAGS=-g -Wextra -Wall -pedantic -Werror -Isrc
 LIBS=$(OPTLIBS)
 
 SOURCES:=$(wildcard src/*.c)
@@ -19,6 +19,9 @@ all: $(DEPENDENCIES) $(TARGET) tests
 
 dev: CFLAGS=-g -Wextra -Wall -pedantic -Werror -Isrc
 dev: all
+
+release: CFLAGS=-g -O2 -Wextra -Wall -pedantic -Isrc $(OPTFLAGS)
+release: all
 
 $(TARGET): build $(OBJECTS)
 	$(CC) $(LIBS) -o $@ $(OBJECTS)

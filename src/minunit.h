@@ -2,8 +2,8 @@
 #ifndef _minunit_h_
 #define _minunit_h_
 
+#include "dbg.h"
 #include <stdio.h>
-#include <dbg.h>
 #include <stdlib.h>
 
 #define mu_suite_start() char* message = NULL;
