@@ -1,5 +1,6 @@
 #include "gatherers.h"
 #include "minunit.h"
+#include <string.h>
 
 static char* Test_GTStack_Init()
 {
@@ -8,6 +9,18 @@ static char* Test_GTStack_Init()
   mu_assert(s.ptr == 0, ".ptr not 0");
   mu_assert(s.top == NULL, ".top wrong");
   mu_assert(s.size == 10, ".size wrong");
+  return NULL;
+}
+
+static char* Test_GTStack_IsEmpty()
+{
+  GTStack s;
+  GTStackEntry e[1];
+  GTStack_Init(&s, e, 1);
+  mu_assert(GTStack_IsEmpty(&s), "empty stack not empty");
+  int i = 0;
+  GTStack_Push(&s, i);
+  mu_assert(!GTStack_IsEmpty(&s), "non-empty stack is empty");
   return NULL;
 }
 
@@ -75,6 +88,7 @@ static char* Test_GTBoard_Init()
   mu_assert(GTBoard_Init(&b) == 0, "init failed");
   mu_assert(b.board[GTBoard_ValidMin] == GTBoard_Empty, 
     ".board[pos] not empty");
+  mu_assert(GTStack_IsEmpty(&(b.stack)), ".stack not empty");
   return NULL;
 }
 
@@ -138,24 +152,27 @@ static char* Test_GTBoard_CanMoveUnit()
   mu_assert(!GTBoard_CanMoveUnit(&b, 0, GTDirection_None),
    "invalid unit can move");
   GTBoard_CreateUnit(&b, GTPlayer_Black, GTUnitType_Gatherer, GTBoard_ValidMin);
+  GTBoard_ResetUnitMovement(&b, 0);
   mu_assert(GTBoard_CanMoveUnit(&b, 0, GTDirection_None), 
-    "can move to invalid");
+    "can't move to valid");
   mu_assert(!GTBoard_CanMoveUnit(&b, 0, GTDirection_North),
-   "can move to valid");
-  mu_assert(GTBoard_CanMoveUnit(&b, 0, GTDirection_East), "can move to valid");
-  mu_assert(GTBoard_CanMoveUnit(&b, 0, GTDirection_South), "can move to valid");
+   "can move to invalid");
+  mu_assert(GTBoard_CanMoveUnit(&b, 0, GTDirection_East),
+   "can't move to valid");
+  mu_assert(GTBoard_CanMoveUnit(&b, 0, GTDirection_South),
+   "can't move to valid");
   mu_assert(!GTBoard_CanMoveUnit(&b, 0, GTDirection_West),
    "can move to invalid");
   GTBoard_CreateUnit(&b, GTPlayer_White, GTUnitType_None,
     GTDirection_PosEast(GTBoard_ValidMin));
   mu_assert(!GTBoard_CanMoveUnit(&b, 0, GTDirection_East),
-   "non-attacking unit move on opposing unit");
+   "non-attacking unit can attack opposing unit");
   b.units[0].type = GTUnitType_Cavalry;
   mu_assert(GTBoard_CanMoveUnit(&b, 0, GTDirection_East),
-   "attacking unit move on opposing unit");
+   "attacking unit can't attack opposing unit");
   b.units[0].color = GTPlayer_White;
   mu_assert(!GTBoard_CanMoveUnit(&b, 0, GTDirection_East),
-    "attacking unit move on friendly unit");
+    "attacking unit can move on friendly unit");
   return NULL;
 }
 
@@ -180,6 +197,7 @@ static char* Test_GTBoard_CreateUnit()
   mu_assert(b.board[GTBoard_ValidMin] == 0, ".board not updated");
   mu_assert(b.units[0].type == GTUnitType_Archer, "created wrong unit");
   mu_assert(b.units[0].color == GTPlayer_Black, ".color wrong");
+  mu_assert(b.units[0].movement == 0, ".movement wrong");
   int i;
   for(i = 0; i < GTBoard_UnitSize - 1; i++)
   {
@@ -233,9 +251,11 @@ static char* Test_GTBoard_MoveUnit()
   mu_assert(GTBoard_MoveUnit(&b, 0, GTDirection_None) == -1,
    "moved invalid unit");
   GTBoard_CreateUnit(&b, GTPlayer_Black, GTUnitType_Gatherer, GTBoard_ValidMin);
+  GTBoard_ResetUnitMovement(&b, 0);
   mu_assert(GTBoard_MoveUnit(&b, 0, GTDirection_East) == 0,
    "can't move valid unit");
   GTBoard_CreateUnit(&b, GTPlayer_White, GTUnitType_Cavalry, GTBoard_ValidMin);
+  GTBoard_ResetUnitMovement(&b, 1);
   mu_assert(GTBoard_MoveUnit(&b, 1, GTDirection_East) == 0,
     "can't move valid unit");
   mu_assert(!GTBoard_IsValidUnit(&b, 0), "didn't kill unit");
@@ -245,10 +265,35 @@ static char* Test_GTBoard_MoveUnit()
   return NULL;
 }
 
+static char* Test_GTBoard_UndoPlay()
+{
+  GTBoard b;
+  GTBoard_Init(&b);
+  GTBoard c = b;
+  mu_assert(GTBoard_UndoPlay(&b) == -1, "undoing with nothing to undo");
+  GTStack_BeginPlay(&(b.stack));
+  mu_assert(GTBoard_UndoPlay(&b) == 0, "failed undo");
+  b.err = c.err;
+  b.stack.err = c.stack.err;
+  mu_assert(memcmp(&b, &c, sizeof(GTBoard)), "undo didn't restore board");
+  GTBoard_CreateUnit(&b, GTPlayer_Black, GTUnitType_Gatherer, GTBoard_ValidMin);
+  GTBoard_ResetUnitMovement(&b, 0);
+  GTBoard d = b;
+  mu_assert(GTBoard_MoveUnit(&b, 0, GTDirection_East) == 0, "can't move unit");
+  mu_assert(GTBoard_UndoPlay(&b) == 0, "undo failed");
+  b.err = d.err;
+  b.stack.err = d.stack.err;
+  // popping and purging still keep entries on the stack
+  memcpy(b.entries, d.entries, sizeof(b.entries));
+  mu_assert(memcmp(&b, &d, sizeof(GTBoard)) == 0, "undo didn't restore board");
+  return NULL;
+}
+
 static char* Test_All()
 {
   mu_suite_start();
   mu_run_test(Test_GTStack_Init);
+  mu_run_test(Test_GTStack_IsEmpty);
   mu_run_test(Test_GTStack_PushExplicit);
   mu_run_test(Test_GTStack_Push);
   mu_run_test(Test_GTStack_Pop);
@@ -266,6 +311,7 @@ static char* Test_All()
   mu_run_test(Test_GTBoard_RemoveUnit);
   mu_run_test(Test_GTBoard_DamageUnit);
   mu_run_test(Test_GTBoard_MoveUnit);
+  mu_run_test(Test_GTBoard_UndoPlay);
   return NULL;
 }
 

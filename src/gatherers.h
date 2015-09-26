@@ -103,6 +103,7 @@ enum GTStackError
   GTStackError_None,
   GTStackError_Underflow,
   GTStackError_Overflow,
+  GTStackError_EmptyPurge,
   GTStackError_EmptyPeek,
   GTStackError_Size
 };
@@ -129,6 +130,8 @@ struct GTStack
 struct_type(GTStack);
 
 int GTStack_Init(GTStack* s, GTStackEntry* entries, size_t size);
+// return 1 if stack is empty
+int GTStack_IsEmpty(const GTStack* s);
 
 int GTStack_PushExplicit(GTStack* s, int val, int* addr);
 
@@ -137,9 +140,12 @@ int GTStack_PushExplicit(GTStack* s, int val, int* addr);
 // #define GTStack_PushAndSet(s, u, v) do \
 // { GTStack_Push(s, (u)); \
 //   u = (v); \
-// } while(0)
+// } while (0)
 
+// remove the top and restore
 int GTStack_Pop(GTStack* s);
+// remove the top without restoring
+int GTStack_Purge(GTStack* s);
 
 int GTStack_Peek(GTStack* s, GTStackEntry* e);
 
@@ -151,6 +157,7 @@ enum GTBoardError
 {
   GTBoardError_None,
   GTBoardError_CannotMoveUnit,
+  GTBoardError_FailedUndoPlay,
   GTBoardError_Size
 };
 enum_type(GTBoardError);
@@ -219,4 +226,5 @@ int GTBoard_DamageUnit(GTBoard* b, int unit, int damage);
 
 int GTBoard_MoveUnit(GTBoard* b, int unit, GTDirection d);
 
+int GTBoard_UndoPlay(GTBoard* b);
 #endif

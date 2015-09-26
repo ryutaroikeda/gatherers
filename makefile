@@ -37,7 +37,7 @@ src/%.d: src/%.c
 
 .PHONY: clean tests
 
-$(TESTS): % : %.o
+$(TESTS): % : %.o $(subst $(TARGETMAIN),,$(OBJECTS))
 	$(CC) $(LIBS) -o $@ $< $(subst $(TARGETMAIN),,$(OBJECTS))
 
 tests: $(TESTS)
