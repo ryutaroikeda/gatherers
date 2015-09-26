@@ -6,6 +6,11 @@
 #define enum_type(t) typedef enum t t
 #define struct_type(t) typedef struct t t
 
+//
+// Unless otherwise stated, the functions below return 0 on success and a
+// negative integer on failure.
+//
+
 enum GTTileType
 {
   GTTileType_None,
@@ -34,6 +39,9 @@ enum GTPlayer
   GTPlayer_Size
 };
 enum_type(GTPlayer);
+
+// return 1 if black and white
+int GTPlayer_IsOpposite(GTPlayer p, GTPlayer q);
 
 enum GTUnitType
 {
@@ -67,6 +75,19 @@ enum GTDirection
   GTDirection_Size
 };
 enum_type(GTDirection);
+
+extern const int GTDirection_Direction[GTDirection_Size];
+
+#define GTDirection_PosNorth(pos) \
+((pos) + GTDirection_Direction[GTDirection_North])
+#define GTDirection_PosEast(pos) \
+((pos) + GTDirection_Direction[GTDirection_East])
+#define GTDirection_PosSouth(pos) \
+((pos) + GTDirection_Direction[GTDirection_South])
+#define GTDirection_PosWest(pos) \
+((pos) + GTDirection_Direction[GTDirection_West])
+#define GTDirection_Pos(pos, d) \
+((pos) + GTDirection_Direction[d])
 
 enum GTStackCode
 {
@@ -172,11 +193,6 @@ struct GTBoard
 };
 struct_type(GTBoard);
 
-//
-// Unless otherwise stated, the functions below return 0 on success and a
-// negative integer on failure.
-//
-
 int GTBoard_Init(GTBoard* b);
 // return 1 if .board[pos] is valid
 int GTBoard_IsValid(const GTBoard* b, int pos);
@@ -186,8 +202,8 @@ int GTBoard_IsEmpty(const GTBoard* b, int pos);
 int GTBoard_IsUnit(const GTBoard* b, int pos);
 // return 1 if .tiles[pos] is visible
 int GTBoard_IsVisible(const GTBoard* b, int pos);
-// return 1 if unit was allocated
-int GTBoard_IsValidUnitId(const GTBoard* b, int unit);
+// return 1 if unit is in .board at the correct pos
+int GTBoard_IsValidUnit(const GTBoard* b, int unit);
 // return 1 if unit can move d or attack d
 int GTBoard_CanMoveUnit(const GTBoard* b, int unit, GTDirection d);
 

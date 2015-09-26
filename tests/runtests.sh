@@ -8,7 +8,7 @@ do
 		then
 			echo $i PASS
 		else
-			echo "ERROR in test $i: tests/test.log"
+			echo "ERROR in test $i: tests/tests.log"
 			echo "------"
 			tail tests/tests.log
 			exit 1

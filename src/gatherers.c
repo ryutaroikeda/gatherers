@@ -43,10 +43,16 @@ static const int unitCanAttack[GTUnitType_Size] =
 //   0, 1, 0, 0, 0, 1
 // };
 
-// static const int direction[GTDirection_Size] =
-// {
-//   0, -GTBoard_WidthMax, 1, GTBoard_WidthMax, -1
-// };
+const int GTDirection_Direction[GTDirection_Size] =
+{
+  0, -GTBoard_WidthMax, 1, GTBoard_WidthMax, -1
+};
+
+int GTPlayer_IsOpposite(GTPlayer p, GTPlayer q)
+{
+  return ((p == GTPlayer_Black && q == GTPlayer_White) ||
+    (p == GTPlayer_White && q == GTPlayer_Black));
+}
 
 int GTStack_Init(GTStack* s, GTStackEntry* entries, size_t size)
 {
@@ -154,19 +160,26 @@ int GTBoard_IsVisible(const GTBoard* b, int pos)
   return b->tiles[pos].isVisible;
 }
 
-int GTBoard_IsValidUnitId(const GTBoard* b, int unit)
+int GTBoard_IsValidUnit(const GTBoard* b, int unit)
 {
-  return (0 <= unit && unit < b->unitId);
+  return (0 <= unit && unit < b->unitId &&
+   b->board[b->units[unit].pos] == unit);
 }
 
 int GTBoard_CanMoveUnit(const GTBoard* b, int unit, GTDirection d)
 {
+  if (!GTBoard_IsValidUnit(b, unit)) { return 0; }
   if (d == GTDirection_None) { return 1; }
-  if (!GTBoard_IsValidUnitId(b, unit)) { return 0; }
+  if (!GTBoard_IsValidUnit(b, unit)) { return 0; }
   const GTUnit* u = &(b->units[unit]);
-  int pos = u->pos + d;
+  int pos = GTDirection_Pos(u->pos, d);
   if (!GTBoard_IsValid(b, pos)) { return 0; }
-  if (!GTBoard_IsEmpty(b, pos) && !unitCanAttack[u->type]) { return 0; }
+  if (!GTBoard_IsEmpty(b, pos)) 
+  {
+    if (!unitCanAttack[u->type]) { return 0; }
+    const GTUnit* v = &(b->units[b->board[pos]]);
+    if (u->color == v->color) { return 0; }
+  }
   return 1;
 }
 
@@ -206,7 +219,7 @@ int GTBoard_CreateUnit(GTBoard* b, GTPlayer p, GTUnitType t, int pos)
 
 int GTBoard_ResetUnitMovement(GTBoard* b, int unit)
 {
-  check(GTBoard_IsValidUnitId(b, unit), "invalid unit");
+  check(GTBoard_IsValidUnit(b, unit), "invalid unit");
   GTUnit* u = &b->units[unit];
   // GTStack_Push(&(b->stack), u->movement);
   u->movement = unitMovement[u->type];
@@ -217,7 +230,7 @@ int GTBoard_ResetUnitMovement(GTBoard* b, int unit)
 
 int GTBoard_RemoveUnit(GTBoard* b, int unit)
 {
-  check(GTBoard_IsValidUnitId(b, unit), "invalid unit");
+  check(GTBoard_IsValidUnit(b, unit), "invalid unit");
   GTUnit* u = &b->units[unit];
   // GTStack_Push(&(b->stack), b->board[u->pos]);
   // GTStack_Push(&(b->stack), u->life);
@@ -232,8 +245,9 @@ int GTBoard_RemoveUnit(GTBoard* b, int unit)
 
 int GTBoard_DamageUnit(GTBoard* b, int unit, int damage)
 {
-  check(GTBoard_IsValidUnitId(b, unit), "invalid unit");
+  check(GTBoard_IsValidUnit(b, unit), "invalid unit");
   GTUnit* u = &b->units[unit];
+  // GTStack_Push(&(b->stack), u->life);
   u->life -= damage;
   if(u->life <= 0)
   {
@@ -247,11 +261,14 @@ int GTBoard_DamageUnit(GTBoard* b, int unit, int damage)
 int GTBoard_MoveUnit(GTBoard* b, int unit, GTDirection d)
 {
   check(GTBoard_CanMoveUnit(b, unit, d), "cannot move unit");
+  // GTStack_BeginPlay(&(b->stack));
   GTUnit* u = &b->units[unit];
-  int pos = u->pos + d;
+  int pos = GTDirection_Pos(u->pos, d);
   if (!GTBoard_IsEmpty(b, pos))
   {
+    // attack opposing unit at pos
     GTBoard_DamageUnit(b, b->board[pos], 1);
+    u->movement--;
   }
   if (GTBoard_IsEmpty(b, pos))
   {
