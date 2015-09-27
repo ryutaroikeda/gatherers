@@ -81,6 +81,20 @@ int GTStack_PushExplicit(GTStack* s, int val, int* addr)
   return -1;
 }
 
+int GTStack_PushAndSetExplicit(GTStack* s, int val, int* addr, int set)
+{
+  check(s->ptr < s->size, "stack overflow");
+  s->top->val = val;
+  s->top->addr = addr;
+  s->ptr++;
+  s->top++;
+  *addr = set;
+  return 0;
+  error:
+  s->err = GTStackError_Overflow;
+  return -1;
+}
+
 int GTStack_Pop(GTStack* s)
 {
   check(s->ptr > 0, "stack underflow");
@@ -169,9 +183,9 @@ int GTBoard_IsUnit(const GTBoard* b, int pos)
     && GTBoard_IsValid(b, pos));
 }
 
-int GTBoard_IsVisible(const GTBoard* b, int pos)
+int GTBoard_IsRevealed(const GTBoard* b, int pos)
 {
-  return b->tiles[pos].isVisible;
+  return b->tiles[pos].isRevealed;
 }
 
 int GTBoard_IsValidUnit(const GTBoard* b, int unit)
@@ -200,8 +214,7 @@ int GTBoard_CanMoveUnit(const GTBoard* b, int unit, GTDirection d)
 int GTBoard_RevealTile(GTBoard* b, int pos)
 {
   check(GTBoard_IsValid(b, pos), "invalid pos");
-  GTStack_Push(&(b->stack), b->tiles[pos].isVisible);
-  b->tiles[pos].isVisible = 1;
+  GTStack_PushAndSet(&(b->stack), b->tiles[pos].isRevealed, 1);
   return 0;
   error:
   return -1;
@@ -212,22 +225,14 @@ int GTBoard_CreateUnit(GTBoard* b, GTPlayer p, GTUnitType t, int pos)
   check(b->unitId < GTBoard_UnitSize, "unit overflow");
   check(GTBoard_IsValid(b, pos), "invalid pos")
   GTUnit* unit = &b->units[b->unitId];
-  GTStack_Push(&(b->stack), unit->color);
-  GTStack_Push(&(b->stack), unit->type);
-  GTStack_Push(&(b->stack), unit->life);
-  GTStack_Push(&(b->stack), unit->pos);
-  GTStack_Push(&(b->stack), unit->movement);
-  GTStack_Push(&(b->stack), b->board[pos]);
-  GTStack_Push(&(b->stack), b->unitId);
-  GTStack_Push(&(b->stack), b->population[p][t]);
-  unit->color = p;
-  unit->type = t;
-  unit->pos = pos;
-  unit->life = unitLife[t];
-  unit->movement = 0;
-  b->board[pos] = b->unitId;
-  b->unitId++;
-  b->population[p][t]++;
+  GTStack_PushAndSet(&(b->stack), unit->color, p);
+  GTStack_PushAndSet(&(b->stack), unit->type, t);
+  GTStack_PushAndSet(&(b->stack), unit->pos, pos);
+  GTStack_PushAndSet(&(b->stack), unit->life, unitLife[t]);
+  GTStack_PushAndSet(&(b->stack), unit->movement, 0);
+  GTStack_PushAndSet(&(b->stack), b->board[pos], b->unitId);
+  GTStack_PushAndSet(&(b->stack), b->unitId, b->unitId + 1);
+  GTStack_PushAndSet(&(b->stack), b->population[p][t], b->population[p][t] + 1);
   return 0;
   error:
   return -1;
@@ -237,8 +242,7 @@ int GTBoard_ResetUnitMovement(GTBoard* b, int unit)
 {
   check(GTBoard_IsValidUnit(b, unit), "invalid unit");
   GTUnit* u = &b->units[unit];
-  GTStack_Push(&(b->stack), u->movement);
-  u->movement = unitMovement[u->type];
+  GTStack_PushAndSet(&(b->stack), u->movement, unitMovement[u->type]);
   return 0;
   error:
   return -1;
@@ -248,12 +252,9 @@ int GTBoard_RemoveUnit(GTBoard* b, int unit)
 {
   check(GTBoard_IsValidUnit(b, unit), "invalid unit");
   GTUnit* u = &b->units[unit];
-  GTStack_Push(&(b->stack), b->board[u->pos]);
-  GTStack_Push(&(b->stack), u->life);
-  GTStack_Push(&(b->stack), u->movement);
-  b->board[u->pos] = GTBoard_Empty;
-  u->life = 0;
-  u->movement = 0;
+  GTStack_PushAndSet(&(b->stack), b->board[u->pos], GTBoard_Empty);
+  GTStack_PushAndSet(&(b->stack), u->life, 0);
+  GTStack_PushAndSet(&(b->stack), u->movement, 0);
   return 0;
   error:
   return -1;
@@ -263,8 +264,7 @@ int GTBoard_DamageUnit(GTBoard* b, int unit, int damage)
 {
   check(GTBoard_IsValidUnit(b, unit), "invalid unit");
   GTUnit* u = &b->units[unit];
-  GTStack_Push(&(b->stack), u->life);
-  u->life -= damage;
+  GTStack_PushAndSet(&(b->stack), u->life, u->life - damage);
   if(u->life <= 0) {
     GTBoard_RemoveUnit(b, unit);
   }
@@ -282,29 +282,31 @@ int GTBoard_MoveUnit(GTBoard* b, int unit, GTDirection d)
   if (!GTBoard_IsEmpty(b, pos)) {
     // attack opposing unit at pos
     GTBoard_DamageUnit(b, b->board[pos], 1);
-    GTStack_Push(&(b->stack), u->movement);
-    u->movement--;
+    GTStack_PushAndSet(&(b->stack), u->movement, u->movement - 1);
   }
   if (GTBoard_IsEmpty(b, pos)) {
-    GTStack_Push(&(b->stack), b->board[pos]);
-    GTStack_Push(&(b->stack), b->board[u->pos]);
-    GTStack_Push(&(b->stack), u->pos);
-    GTStack_Push(&(b->stack), u->movement);
-    b->board[pos] = unit;
-    b->board[u->pos] = GTBoard_Empty;
-    u->pos = pos;
-    u->movement--;
+    GTStack_PushAndSet(&(b->stack), b->board[pos], unit);
+    GTStack_PushAndSet(&(b->stack), b->board[u->pos], GTBoard_Empty);
+    GTStack_PushAndSet(&(b->stack), u->pos, pos);
+    GTStack_PushAndSet(&(b->stack), u->movement, u->movement - 1);
     GTBoard_RevealTile(b, pos);
   }
   if (b->tiles[pos].type == GTTileType_Mountain) {
-    GTStack_Push(&(b->stack), u->movement);
-    u->movement--; 
+    GTStack_PushAndSet(&(b->stack), u->movement, u->movement - 1);
   }
   return 0;
   error:
   b->err = GTBoardError_CannotMoveUnit;
   return -1;
 }
+
+// int GTBoard_ProduceUnit(GTBoard* b, int unit, GTUnitType t, GTDirection d)
+// {
+//   check(!unitCanProduce[t], "unit cannot produce");
+//   return 0;
+//   error:
+//   return -1;
+// }
 
 int GTBoard_UndoPlay(GTBoard* b)
 {

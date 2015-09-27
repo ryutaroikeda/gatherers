@@ -30,9 +30,9 @@ static char* Test_GTStack_PushExplicit()
   GTStackEntry e[1];
   GTStack_Init(&s, e, 1);
   int i = -42;
-  mu_assert(GTStack_PushExplicit(&s, i, NULL) == 0, "stack overflow");
+  mu_assert(GTStack_PushExplicit(&s, i, &i) == 0, "stack overflow");
   mu_assert(e[0].val == i, ".val wrong");
-  mu_assert(e[0].addr == NULL, ".addr wrong");
+  mu_assert(e[0].addr == &i, ".addr wrong");
   mu_assert(GTStack_PushExplicit(&s, 0, NULL) == -1, "undetected overflow");
   return NULL;
 }
@@ -49,6 +49,37 @@ static char* Test_GTStack_Push()
   mu_assert(s.ptr == 1, ".ptr wrong");
   mu_assert(s.top == &e[1], ".top wrong");
   mu_assert(GTStack_Push(&s, i) == -1, "undetected overflow");
+  return NULL;
+}
+
+static char* Test_GTStack_PushAndSetExplicit()
+{
+  GTStack s;
+  GTStackEntry e[1];
+  GTStack_Init(&s, e, 1);
+  int i = 9999;
+  const int j = -10;
+  mu_assert(GTStack_PushAndSetExplicit(&s, i, &i, j) == 0, "stack overflow");
+  mu_assert(e[0].val == 9999, ".val wrong");
+  mu_assert(e[0].addr == &i, ".addr wrong");
+  mu_assert(i == j, "wrong value set");
+  mu_assert(s.ptr == 1, ".ptr wrong");
+  mu_assert(s.top == &e[1], ".top wrong");
+  mu_assert(GTStack_PushAndSetExplicit(&s, 0, NULL, 0) == -1,
+   "undetected overflow");
+  return NULL;
+}
+
+static char* Test_GTStack_PushAndSet()
+{
+  GTStack s;
+  GTStackEntry e[1];
+  GTStack_Init(&s, e, 1);
+  int i = -93483;
+  mu_assert(GTStack_PushAndSet(&s, i, 348) == 0, "stack overflow");
+  mu_assert(e[0].val == -93483, ".val wrong");
+  mu_assert(e[0].addr == &i, ".addr wrong");
+  mu_assert(i == 348, "wrong value set"); 
   return NULL;
 }
 
@@ -125,13 +156,13 @@ static char* Test_GTBoard_IsUnit()
   return NULL;
 }
 
-static char* Test_GTBoard_IsVisible()
+static char* Test_GTBoard_IsRevealed()
 {
   GTBoard b;
   GTBoard_Init(&b);
-  mu_assert(!GTBoard_IsVisible(&b, GTBoard_ValidMin), "invisible is visible");
-  b.tiles[GTBoard_ValidMin].isVisible = 1;
-  mu_assert(GTBoard_IsVisible(&b, GTBoard_ValidMin), "visible is invisible");
+  mu_assert(!GTBoard_IsRevealed(&b, GTBoard_ValidMin), "invisible is visible");
+  b.tiles[GTBoard_ValidMin].isRevealed = 1;
+  mu_assert(GTBoard_IsRevealed(&b, GTBoard_ValidMin), "visible is invisible");
   return NULL;
 }
 
@@ -181,7 +212,7 @@ static char* Test_GTBoard_RevealTile()
   GTBoard b;
   GTBoard_Init(&b);
   mu_assert(GTBoard_RevealTile(&b, GTBoard_ValidMin) == 0, "reveal failed");
-  mu_assert(b.tiles[GTBoard_ValidMin].isVisible == 1, ".isVisible wrong");
+  mu_assert(b.tiles[GTBoard_ValidMin].isRevealed == 1, ".isRevealed wrong");
   return NULL;  
 }
 
@@ -261,7 +292,10 @@ static char* Test_GTBoard_MoveUnit()
   mu_assert(!GTBoard_IsValidUnit(&b, 0), "didn't kill unit");
   mu_assert(b.units[1].pos == GTDirection_PosEast(GTBoard_ValidMin), 
     "wrong .pos");
-  mu_assert(b.units[1].movement <= 0, ".movement too high");
+  mu_assert(b.units[1].movement == 0, ".movement too high");
+  mu_assert(GTBoard_IsRevealed(&b, GTDirection_PosEast(GTBoard_ValidMin)),
+    "new pos not revealed");
+  mu_assert(GTBoard_IsEmpty(&b, GTBoard_ValidMin), "old pos not empty");
   return NULL;
 }
 
@@ -296,13 +330,15 @@ static char* Test_All()
   mu_run_test(Test_GTStack_IsEmpty);
   mu_run_test(Test_GTStack_PushExplicit);
   mu_run_test(Test_GTStack_Push);
+  mu_run_test(Test_GTStack_PushAndSetExplicit);
+  mu_run_test(Test_GTStack_PushAndSet);
   mu_run_test(Test_GTStack_Pop);
   mu_run_test(Test_GTStack_Peek);
   mu_run_test(Test_GTBoard_Init);
   mu_run_test(Test_GTBoard_IsValid);
   mu_run_test(Test_GTBoard_IsEmpty);
   mu_run_test(Test_GTBoard_IsUnit);
-  mu_run_test(Test_GTBoard_IsVisible);
+  mu_run_test(Test_GTBoard_IsRevealed);
   mu_run_test(Test_GTBoard_IsValidUnit);
   mu_run_test(Test_GTBoard_CanMoveUnit);
   mu_run_test(Test_GTBoard_RevealTile);

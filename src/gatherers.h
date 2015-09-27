@@ -27,7 +27,7 @@ enum_type(GTTileType);
 struct GTTile
 {
   GTTileType type;
-  int isVisible;
+  int isRevealed;
 };
 struct_type(GTTile);
 
@@ -109,6 +109,7 @@ enum GTStackError
 };
 enum_type(GTStackError);
 
+// keep the address and the old value
 struct GTStackEntry
 {
   int val;
@@ -137,10 +138,10 @@ int GTStack_PushExplicit(GTStack* s, int val, int* addr);
 
 #define GTStack_Push(s, v) GTStack_PushExplicit(s, (v), (int*)&(v))
 
-// #define GTStack_PushAndSet(s, u, v) do \
-// { GTStack_Push(s, (u)); \
-//   u = (v); \
-// } while (0)
+int GTStack_PushAndSetExplicit(GTStack* s, int val, int* addr, int set);
+
+#define GTStack_PushAndSet(s, v, w) \
+GTStack_PushAndSetExplicit(s, (v), (int*)&(v), w)
 
 // remove the top and restore
 int GTStack_Pop(GTStack* s);
@@ -207,8 +208,8 @@ int GTBoard_IsValid(const GTBoard* b, int pos);
 int GTBoard_IsEmpty(const GTBoard* b, int pos);
 // return 1 if .board[pos] is a unit
 int GTBoard_IsUnit(const GTBoard* b, int pos);
-// return 1 if .tiles[pos] is visible
-int GTBoard_IsVisible(const GTBoard* b, int pos);
+// return 1 if .tiles[pos] is revealed
+int GTBoard_IsRevealed(const GTBoard* b, int pos);
 // return 1 if unit is in .board at the correct pos
 int GTBoard_IsValidUnit(const GTBoard* b, int unit);
 // return 1 if unit can move d or attack d
@@ -226,5 +227,8 @@ int GTBoard_DamageUnit(GTBoard* b, int unit, int damage);
 
 int GTBoard_MoveUnit(GTBoard* b, int unit, GTDirection d);
 
+// int GTBoard_ProduceUnit(GTBoard* b, int unit, GTUnitType t, GTDirection d);
+
 int GTBoard_UndoPlay(GTBoard* b);
+
 #endif
