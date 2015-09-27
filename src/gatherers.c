@@ -37,10 +37,10 @@ static const int unitCanAttack[GTUnitType_Size] =
 //   0, 0, 2, 0, 0, 1
 // };
 
-// static const int unitCanProduce[GTUnitType_Size] =
-// {
-//   0, 1, 0, 0, 0, 1
-// };
+static const int unitCanProduce[GTUnitType_Size] =
+{
+  0, 1, 0, 0, 0, 1
+};
 
 const int GTDirection_Direction[GTDirection_Size] =
 {
@@ -60,6 +60,7 @@ int GTBoard_Init(GTBoard* b)
   memset(b->entries, 0, sizeof(GTStackEntry) * GTBoard_StackSize);
   GTStack_Init(&b->stack, b->entries, GTBoard_StackSize);
   memset(b->population[0], 0, sizeof(int) * GTPlayer_Size * GTUnitType_Size);
+  memset(b->resources[0], 0, sizeof(int) * GTPlayer_Size * GTTileType_Size);
   b->unitId = 0;
   int i;
   for(i = 0; i < GTBoard_ValidMin; i++) {
@@ -128,6 +129,22 @@ int GTBoard_CanMoveUnit(const GTBoard* b, int unit, GTDirection d)
 //   return 1;
 // }
 
+// GTTileType GTBoard_GetTileType(const GTBoard* b, int pos)
+// {
+//   check(GTBoard_IsValid(b, pos), "invalid pos");
+//   return b->tiles[pos].type;
+//   error:
+//   return GTTileType_None;
+// }
+
+// GTPlayer GTBoard_GetUnitColor(const GTBoard* b, int unit)
+// {
+//   check(GTBoard_IsValidUnit(b, unit), "invalid pos");
+//   return b->units[unit].color;
+//   error:
+//   return GTPlayer_None;
+// }
+
 int GTBoard_RevealTile(GTBoard* b, int pos)
 {
   check(GTBoard_IsValid(b, pos), "invalid pos");
@@ -150,6 +167,12 @@ int GTBoard_CreateUnit(GTBoard* b, GTPlayer p, GTUnitType t, int pos)
   GTStack_PushAndSet(&(b->stack), b->board[pos], b->unitId);
   GTStack_PushAndSet(&(b->stack), b->unitId, b->unitId + 1);
   GTStack_PushAndSet(&(b->stack), b->population[p][t], b->population[p][t] + 1);
+  // if unit is a producer, update b->resources
+  if (unitCanProduce[t]) {
+    GTTileType tile = b->tiles[pos].type;
+    GTStack_PushAndSet(&(b->stack), b->resources[p][tile],
+     b->resources[p][tile] + 1);
+  }
   return 0;
   error:
   return -1;
@@ -169,6 +192,11 @@ int GTBoard_RemoveUnit(GTBoard* b, int unit)
 {
   check(GTBoard_IsValidUnit(b, unit), "invalid unit");
   GTUnit* u = &b->units[unit];
+  if (unitCanProduce[u->type]) {
+    GTTileType t = b->tiles[u->pos].type;
+    GTStack_PushAndSet(&(b->stack), b->resources[u->color][t],
+      b->resources[u->color][t] - 1);
+  }
   GTStack_PushAndSet(&(b->stack), b->board[u->pos], GTBoard_Empty);
   GTStack_PushAndSet(&(b->stack), u->life, 0);
   GTStack_PushAndSet(&(b->stack), u->movement, 0);
@@ -202,6 +230,16 @@ int GTBoard_MoveUnit(GTBoard* b, int unit, GTDirection d)
     GTStack_PushAndSet(&(b->stack), u->movement, u->movement - 1);
   }
   if (GTBoard_IsEmpty(b, pos)) {
+    // if the unit is a producer, update b->resources
+    if (unitCanProduce[u->type])
+    {
+      GTTileType t = b->tiles[u->pos].type;
+      GTStack_PushAndSet(&(b->stack), b->resources[u->color][t], 
+        b->resources[u->color][t] - 1);
+      t = b->tiles[pos].type;
+      GTStack_PushAndSet(&(b->stack), b->resources[u->color][t],
+        b->resources[u->color][t] + 1);
+    }
     GTStack_PushAndSet(&(b->stack), b->board[pos], unit);
     GTStack_PushAndSet(&(b->stack), b->board[u->pos], GTBoard_Empty);
     GTStack_PushAndSet(&(b->stack), u->pos, pos);

@@ -99,6 +99,27 @@ static char* Test_GTBoard_CanMoveUnit()
   return NULL;
 }
 
+// static char* Test_GTBoard_GetTileType()
+// {
+//   GTBoard b;
+//   GTBoard_Init(&b);
+//   mu_assert(GTBoard_GetTileType(&b, GTBoard_ValidMin) == GTTileType_None,
+//    "wrong tile type");
+//   return NULL;
+// }
+
+// static char* Test_GTBoard_GetUnitColor()
+// {
+//   GTBoard b;
+//   GTBoard_Init(&b);
+//   mu_assert(GTBoard_GetUnitColor(&b, GTBoard_InvalidMin) == GTPlayer_None,
+//     "should be invalid");
+//   GTBoard_CreateUnit(&b, GTPlayer_Black, GTUnitType_None, GTBoard_ValidMin);
+//   mu_assert(GTBoard_GetUnitColor(&b, 0) == GTPlayer_Black,
+//     "should be black");
+//   return NULL;
+// }
+
 static char* Test_GTBoard_RevealTile()
 {
   GTBoard b;
@@ -114,13 +135,21 @@ static char* Test_GTBoard_CreateUnit()
   GTBoard_Init(&b);
   mu_assert(GTBoard_CreateUnit(&b, GTPlayer_None, GTUnitType_None,
    GTBoard_InvalidMin) == -1, "create unit at invalid");
-  mu_assert(GTBoard_CreateUnit(&b, GTPlayer_Black, GTUnitType_Archer,
+  mu_assert(GTBoard_CreateUnit(&b, GTPlayer_Black, GTUnitType_Gatherer,
    GTBoard_ValidMin) == 0, "unit overflow");
   mu_assert(b.unitId == 1, ".unitId not updated");
   mu_assert(b.board[GTBoard_ValidMin] == 0, ".board not updated");
-  mu_assert(b.units[0].type == GTUnitType_Archer, "created wrong unit");
+  mu_assert(b.units[0].type == GTUnitType_Gatherer, "created wrong unit");
   mu_assert(b.units[0].color == GTPlayer_Black, ".color wrong");
   mu_assert(b.units[0].movement == 0, ".movement wrong");
+  mu_assert(b.population[GTPlayer_Black][GTUnitType_Gatherer] == 1,
+    ".population wrong");
+  GTTileType t = b.tiles[GTBoard_ValidMin].type;
+  mu_assert(b.resources[GTPlayer_Black][t] == 1, ".resources wrong");
+  GTBoard_CreateUnit(&b, GTPlayer_White, GTUnitType_Archer,
+   GTDirection_PosEast(GTBoard_InvalidMin));
+  t = b.tiles[GTDirection_PosEast(GTBoard_InvalidMin)].type;
+  mu_assert(b.resources[GTPlayer_White][t] == 0, ".resources wrong");
   int i;
   for(i = 0; i < GTBoard_UnitSize - 1; i++)
   {
@@ -147,10 +176,12 @@ static char* Test_GTBoard_RemoveUnit()
   GTBoard b;
   GTBoard_Init(&b);
   mu_assert(GTBoard_RemoveUnit(&b, 0) == -1, "removed invalid unit");
-  GTBoard_CreateUnit(&b, GTPlayer_None, GTUnitType_None, GTBoard_ValidMin);
+  GTBoard_CreateUnit(&b, GTPlayer_None, GTUnitType_Gatherer, GTBoard_ValidMin);
   mu_assert(GTBoard_RemoveUnit(&b, 0) == 0, "can't remove valid unit");
   mu_assert(b.units[0].life == 0, "wrong .life");
   mu_assert(b.units[0].movement == 0, "wrong .movement");
+  GTTileType t = b.tiles[b.units[0].pos].type;
+  mu_assert(b.resources[GTPlayer_None][t] == 0, "wrong .resources");
   return NULL;
 }
 
@@ -171,12 +202,18 @@ static char* Test_GTBoard_MoveUnit()
 {
   GTBoard b;
   GTBoard_Init(&b);
+  b.tiles[GTBoard_ValidMin].type = GTTileType_Wood;
+  b.tiles[GTDirection_PosEast(GTBoard_ValidMin)].type = GTTileType_Horse;
   mu_assert(GTBoard_MoveUnit(&b, 0, GTDirection_None) == -1,
    "moved invalid unit");
   GTBoard_CreateUnit(&b, GTPlayer_Black, GTUnitType_Gatherer, GTBoard_ValidMin);
   GTBoard_ResetUnitMovement(&b, 0);
   mu_assert(GTBoard_MoveUnit(&b, 0, GTDirection_East) == 0,
    "can't move valid unit");
+  mu_assert(b.resources[GTPlayer_Black][GTTileType_Wood] == 0,
+    "wood wrong");
+  mu_assert(b.resources[GTPlayer_Black][GTTileType_Horse] == 1,
+    "horse wrong");
   GTBoard_CreateUnit(&b, GTPlayer_White, GTUnitType_Cavalry, GTBoard_ValidMin);
   GTBoard_ResetUnitMovement(&b, 1);
   mu_assert(GTBoard_MoveUnit(&b, 1, GTDirection_East) == 0,
@@ -225,6 +262,8 @@ static char* Test_All()
   mu_run_test(Test_GTBoard_IsRevealed);
   mu_run_test(Test_GTBoard_IsValidUnit);
   mu_run_test(Test_GTBoard_CanMoveUnit);
+  // mu_run_test(Test_GTBoard_GetTileType);
+  // mu_run_test(Test_GTBoard_GetUnitColor);
   mu_run_test(Test_GTBoard_RevealTile);
   mu_run_test(Test_GTBoard_CreateUnit);
   mu_run_test(Test_GTBoard_ResetUnitMovement);

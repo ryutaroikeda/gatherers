@@ -2,6 +2,7 @@
 #define __gatherers_h__
 #include "util.h"
 #include "stack.h"
+
 //
 // Unless otherwise stated, the functions below return 0 on success and a
 // negative integer on failure.
@@ -153,6 +154,10 @@ int GTBoard_IsValidUnit(const GTBoard* b, int unit);
 int GTBoard_CanMoveUnit(const GTBoard* b, int unit, GTDirection d);
 
 int GTBoard_CanProduceUnit(const GTBoard* b, int unit, GTDirection d);
+// return tiles[pos].tile
+// GTTileType GTBoard_GetTileType(const GTBoard* b, int pos);
+
+// GTPlayer GTBoard_GetUnitColor(const GTBoard* b, int unit);
 
 int GTBoard_RevealTile(GTBoard* b, int pos);
 
