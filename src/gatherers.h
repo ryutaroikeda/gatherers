@@ -1,11 +1,7 @@
 #ifndef __gatherers_h__
 #define __gatherers_h__
-
-#include <stddef.h>
-
-#define enum_type(t) typedef enum t t
-#define struct_type(t) typedef struct t t
-
+#include "util.h"
+#include "stack.h"
 //
 // Unless otherwise stated, the functions below return 0 on success and a
 // negative integer on failure.
@@ -89,71 +85,6 @@ extern const int GTDirection_Direction[GTDirection_Size];
 #define GTDirection_Pos(pos, d) \
 ((pos) + GTDirection_Direction[d])
 
-enum GTStackCode
-{
-  GTStackCode_None,
-  GTStackCode_BeginPlay,
-  GTStackCode_BeginTurn,
-  GTStackCode_Size
-};
-enum_type(GTStackCode);
-
-enum GTStackError
-{
-  GTStackError_None,
-  GTStackError_Underflow,
-  GTStackError_Overflow,
-  GTStackError_EmptyPurge,
-  GTStackError_EmptyPeek,
-  GTStackError_Size
-};
-enum_type(GTStackError);
-
-// keep the address and the old value
-struct GTStackEntry
-{
-  int val;
-  int* addr;
-};
-struct_type(GTStackEntry);
-
-struct GTStack
-{
-  // entry of the top of the stack
-  GTStackEntry* top;
-  // maximum stack depth
-  int size;
-  // index of the top of the stack
-  int ptr;
-  // error number
-  GTStackError err;
-};
-struct_type(GTStack);
-
-int GTStack_Init(GTStack* s, GTStackEntry* entries, size_t size);
-// return 1 if stack is empty
-int GTStack_IsEmpty(const GTStack* s);
-
-int GTStack_PushExplicit(GTStack* s, int val, int* addr);
-
-#define GTStack_Push(s, v) GTStack_PushExplicit(s, (v), (int*)&(v))
-
-int GTStack_PushAndSetExplicit(GTStack* s, int val, int* addr, int set);
-
-#define GTStack_PushAndSet(s, v, w) \
-GTStack_PushAndSetExplicit(s, (v), (int*)&(v), w)
-
-// remove the top and restore
-int GTStack_Pop(GTStack* s);
-// remove the top without restoring
-int GTStack_Purge(GTStack* s);
-
-int GTStack_Peek(GTStack* s, GTStackEntry* e);
-
-int GTStack_BeginPlay(GTStack* s);
-
-int GTStack_BeginTurn(GTStack* s);
-
 enum GTBoardError
 {
   GTBoardError_None,
@@ -194,8 +125,14 @@ struct GTBoard
   int board[GTBoard_Size];
   // number of units for each unit type
   int population[GTPlayer_Size][GTUnitType_Size];
+  // number of resources acquired
+  int resources[GTPlayer_Size][GTTileType_Size];
   // index of next free unit
   int unitId;
+  // flag
+  int didProduceGatherer;
+  // number of turns taken
+  int turn;
   // error number
   GTBoardError err;
 };
@@ -215,6 +152,8 @@ int GTBoard_IsValidUnit(const GTBoard* b, int unit);
 // return 1 if unit can move d or attack d
 int GTBoard_CanMoveUnit(const GTBoard* b, int unit, GTDirection d);
 
+int GTBoard_CanProduceUnit(const GTBoard* b, int unit, GTDirection d);
+
 int GTBoard_RevealTile(GTBoard* b, int pos);
 
 int GTBoard_CreateUnit(GTBoard* b, GTPlayer p, GTUnitType t, int pos);
@@ -227,7 +166,7 @@ int GTBoard_DamageUnit(GTBoard* b, int unit, int damage);
 
 int GTBoard_MoveUnit(GTBoard* b, int unit, GTDirection d);
 
-// int GTBoard_ProduceUnit(GTBoard* b, int unit, GTUnitType t, GTDirection d);
+int GTBoard_ProduceUnit(GTBoard* b, int unit, GTUnitType t, GTDirection d);
 
 int GTBoard_UndoPlay(GTBoard* b);
 
