@@ -99,26 +99,27 @@ static char* Test_GTBoard_CanMoveUnit()
   return NULL;
 }
 
-// static char* Test_GTBoard_GetTileType()
-// {
-//   GTBoard b;
-//   GTBoard_Init(&b);
-//   mu_assert(GTBoard_GetTileType(&b, GTBoard_ValidMin) == GTTileType_None,
-//    "wrong tile type");
-//   return NULL;
-// }
-
-// static char* Test_GTBoard_GetUnitColor()
-// {
-//   GTBoard b;
-//   GTBoard_Init(&b);
-//   mu_assert(GTBoard_GetUnitColor(&b, GTBoard_InvalidMin) == GTPlayer_None,
-//     "should be invalid");
-//   GTBoard_CreateUnit(&b, GTPlayer_Black, GTUnitType_None, GTBoard_ValidMin);
-//   mu_assert(GTBoard_GetUnitColor(&b, 0) == GTPlayer_Black,
-//     "should be black");
-//   return NULL;
-// }
+static char* Test_GTBoard_CanProduceUnit()
+{
+  GTBoard b;
+  GTBoard_Init(&b);
+  b.tiles[GTBoard_ValidMin].type = GTTileType_Iron;
+  GTBoard_CreateUnit(&b, GTPlayer_Black, GTUnitType_Gatherer, GTBoard_ValidMin);
+  mu_assert(!GTBoard_CanProduceUnit(&b, 0, GTUnitType_Gatherer,
+   GTDirection_East), "can produce with no movement");
+  GTBoard_ResetUnitMovement(&b, 0);
+  mu_assert(!GTBoard_CanProduceUnit(&b, 0, GTUnitType_Spearman, 
+   GTDirection_North), "can produce on invalid");
+  mu_assert(GTBoard_CanProduceUnit(&b, 0, GTUnitType_Spearman,
+   GTDirection_East), "cannot produce spearman");
+  mu_assert(!GTBoard_CanProduceUnit(&b, 0, GTUnitType_Archer, 
+   GTDirection_East), "can produce archer");
+  GTBoard_CreateUnit(&b, GTPlayer_White, GTUnitType_Gatherer,
+   GTDirection_PosEast(GTBoard_ValidMin));
+  mu_assert(!GTBoard_CanProduceUnit(&b, 0, GTUnitType_Gatherer, 
+    GTDirection_East), "can produce on top of unit");
+  return NULL;
+}
 
 static char* Test_GTBoard_RevealTile()
 {
@@ -171,15 +172,19 @@ static char* Test_GTBoard_ResetUnitMovement()
   return NULL;
 }
 
-static char* Test_GTBoard_RemoveUnit()
+static char* Test_GTBoard_DeleteUnit()
 {
   GTBoard b;
   GTBoard_Init(&b);
-  mu_assert(GTBoard_RemoveUnit(&b, 0) == -1, "removed invalid unit");
+  mu_assert(GTBoard_DeleteUnit(&b, 0) == -1, "removed invalid unit");
   GTBoard_CreateUnit(&b, GTPlayer_None, GTUnitType_Gatherer, GTBoard_ValidMin);
-  mu_assert(GTBoard_RemoveUnit(&b, 0) == 0, "can't remove valid unit");
+  mu_assert(b.population[GTPlayer_None][GTUnitType_Gatherer] == 1,
+    "wrong .population");
+  mu_assert(GTBoard_DeleteUnit(&b, 0) == 0, "can't remove valid unit");
   mu_assert(b.units[0].life == 0, "wrong .life");
   mu_assert(b.units[0].movement == 0, "wrong .movement");
+  mu_assert(b.population[GTPlayer_None][GTUnitType_Gatherer] == 0, 
+    "wrong .population");
   GTTileType t = b.tiles[b.units[0].pos].type;
   mu_assert(b.resources[GTPlayer_None][t] == 0, "wrong .resources");
   return NULL;
@@ -221,10 +226,30 @@ static char* Test_GTBoard_MoveUnit()
   mu_assert(!GTBoard_IsValidUnit(&b, 0), "didn't kill unit");
   mu_assert(b.units[1].pos == GTDirection_PosEast(GTBoard_ValidMin), 
     "wrong .pos");
-  mu_assert(b.units[1].movement == 0, ".movement too high");
+  mu_assert(b.units[1].movement == -1, ".movement wrong");
   mu_assert(GTBoard_IsRevealed(&b, GTDirection_PosEast(GTBoard_ValidMin)),
     "new pos not revealed");
   mu_assert(GTBoard_IsEmpty(&b, GTBoard_ValidMin), "old pos not empty");
+  return NULL;
+}
+
+static char* Test_GTBoard_ProduceUnit()
+{
+  GTBoard b;
+  GTBoard_Init(&b);
+  b.tiles[GTBoard_ValidMin].type = GTTileType_Wood;
+  GTBoard_CreateUnit(&b, GTPlayer_Black, GTUnitType_Gatherer, GTBoard_ValidMin);
+  GTBoard_ResetUnitMovement(&b, 0);
+  mu_assert(
+    GTBoard_ProduceUnit(&b, 0, GTUnitType_Archer, GTDirection_East) == 0,
+    "couldn't produce archer");
+  mu_assert(b.didProduceUnit == 1, ".didProduceUnit wrong");
+  mu_assert(GTBoard_IsValidUnit(&b, 1), "no valid unit produced");
+  GTUnit* u = &b.units[0];
+  mu_assert(u->movement == 0, ".movement wrong");
+  GTBoard_ResetUnitMovement(&b, 0);
+  mu_assert(!GTBoard_CanProduceUnit(&b, 0, GTUnitType_Archer,
+   GTDirection_South), "can produce archer");
   return NULL;
 }
 
@@ -262,14 +287,14 @@ static char* Test_All()
   mu_run_test(Test_GTBoard_IsRevealed);
   mu_run_test(Test_GTBoard_IsValidUnit);
   mu_run_test(Test_GTBoard_CanMoveUnit);
-  // mu_run_test(Test_GTBoard_GetTileType);
-  // mu_run_test(Test_GTBoard_GetUnitColor);
+  mu_run_test(Test_GTBoard_CanProduceUnit);
   mu_run_test(Test_GTBoard_RevealTile);
   mu_run_test(Test_GTBoard_CreateUnit);
   mu_run_test(Test_GTBoard_ResetUnitMovement);
-  mu_run_test(Test_GTBoard_RemoveUnit);
+  mu_run_test(Test_GTBoard_DeleteUnit);
   mu_run_test(Test_GTBoard_DamageUnit);
   mu_run_test(Test_GTBoard_MoveUnit);
+  mu_run_test(Test_GTBoard_ProduceUnit);
   mu_run_test(Test_GTBoard_UndoPlay);
   return NULL;
 }

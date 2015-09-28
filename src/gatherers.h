@@ -131,7 +131,8 @@ struct GTBoard
   // index of next free unit
   int unitId;
   // flag
-  int didProduceGatherer;
+  int didProduceProducer;
+  int didProduceUnit;
   // number of turns taken
   int turn;
   // error number
@@ -153,11 +154,8 @@ int GTBoard_IsValidUnit(const GTBoard* b, int unit);
 // return 1 if unit can move d or attack d
 int GTBoard_CanMoveUnit(const GTBoard* b, int unit, GTDirection d);
 
-int GTBoard_CanProduceUnit(const GTBoard* b, int unit, GTDirection d);
-// return tiles[pos].tile
-// GTTileType GTBoard_GetTileType(const GTBoard* b, int pos);
-
-// GTPlayer GTBoard_GetUnitColor(const GTBoard* b, int unit);
+int
+GTBoard_CanProduceUnit(const GTBoard* b, int unit, GTUnitType t, GTDirection d);
 
 int GTBoard_RevealTile(GTBoard* b, int pos);
 
@@ -165,7 +163,7 @@ int GTBoard_CreateUnit(GTBoard* b, GTPlayer p, GTUnitType t, int pos);
 
 int GTBoard_ResetUnitMovement(GTBoard* b, int unit);
 
-int GTBoard_RemoveUnit(GTBoard* b, int unit);
+int GTBoard_DeleteUnit(GTBoard* b, int unit);
 
 int GTBoard_DamageUnit(GTBoard* b, int unit, int damage);
 

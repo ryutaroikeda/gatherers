@@ -1,16 +1,16 @@
 #include "dbg.h"
 #include "gatherers.h"
 
-// static const GTUnitType tileProduct[GTTileType_Size] =
-// {
-//   GTUnitType_None,
-//   GTUnitType_None,
-//   GTUnitType_Archer,
-//   GTUnitType_Cavalry,
-//   GTUnitType_Spearman,
-//   GTUnitType_Castle,
-//   GTUnitType_None
-// };
+static const GTUnitType tileProduct[GTTileType_Size] =
+{
+  GTUnitType_None,
+  GTUnitType_None,
+  GTUnitType_Archer,
+  GTUnitType_Cavalry,
+  GTUnitType_Spearman,
+  GTUnitType_Castle,
+  GTUnitType_None
+};
 
 static const int unitLife[GTUnitType_Size] =
 {
@@ -121,29 +121,22 @@ int GTBoard_CanMoveUnit(const GTBoard* b, int unit, GTDirection d)
   return 1;
 }
 
-// int GTBoard_CanProduceUnit(const GTBoard* b, int unit, GTDirection d)
-// {
-//   if (!GTBoard_IsValidUnit(b, unit)) { return 0; }
-//   if (!unitCanProduce[b->units[unit].type]) { return 0; }
-//   if (b->units[unit].movement <= 0) { return 0; }
-//   return 1;
-// }
-
-// GTTileType GTBoard_GetTileType(const GTBoard* b, int pos)
-// {
-//   check(GTBoard_IsValid(b, pos), "invalid pos");
-//   return b->tiles[pos].type;
-//   error:
-//   return GTTileType_None;
-// }
-
-// GTPlayer GTBoard_GetUnitColor(const GTBoard* b, int unit)
-// {
-//   check(GTBoard_IsValidUnit(b, unit), "invalid pos");
-//   return b->units[unit].color;
-//   error:
-//   return GTPlayer_None;
-// }
+int
+GTBoard_CanProduceUnit(const GTBoard* b, int unit, GTUnitType t, GTDirection d)
+{
+  if (!GTBoard_IsValidUnit(b, unit)) { return 0; }
+  if (b->didProduceProducer) { return 0; }
+  const GTUnit* u = &b->units[unit];
+  if (!unitCanProduce[u->type]) { return 0; }
+  if (u->movement <= 0) { return 0; }
+  int pos = GTDirection_Pos(u->pos, d);
+  if (!GTBoard_IsEmpty(b, pos)) { return 0; }
+  if ((t == GTUnitType_Gatherer) && b->didProduceUnit) { return 0; }
+  GTTileType tile = b->tiles[u->pos].type;
+  if (t != tileProduct[tile]) { return 0; }
+  if (b->resources[u->color][tile] <= b->population[u->color][t]) { return 0; }
+  return 1;
+}
 
 int GTBoard_RevealTile(GTBoard* b, int pos)
 {
@@ -188,7 +181,7 @@ int GTBoard_ResetUnitMovement(GTBoard* b, int unit)
   return -1;
 }
 
-int GTBoard_RemoveUnit(GTBoard* b, int unit)
+int GTBoard_DeleteUnit(GTBoard* b, int unit)
 {
   check(GTBoard_IsValidUnit(b, unit), "invalid unit");
   GTUnit* u = &b->units[unit];
@@ -197,6 +190,9 @@ int GTBoard_RemoveUnit(GTBoard* b, int unit)
     GTStack_PushAndSet(&(b->stack), b->resources[u->color][t],
       b->resources[u->color][t] - 1);
   }
+  // todo: update population
+  GTStack_PushAndSet(&(b->stack), b->population[u->color][u->type],
+    b->population[u->color][u->type] - 1);
   GTStack_PushAndSet(&(b->stack), b->board[u->pos], GTBoard_Empty);
   GTStack_PushAndSet(&(b->stack), u->life, 0);
   GTStack_PushAndSet(&(b->stack), u->movement, 0);
@@ -211,7 +207,7 @@ int GTBoard_DamageUnit(GTBoard* b, int unit, int damage)
   GTUnit* u = &b->units[unit];
   GTStack_PushAndSet(&(b->stack), u->life, u->life - damage);
   if(u->life <= 0) {
-    GTBoard_RemoveUnit(b, unit);
+    GTBoard_DeleteUnit(b, unit);
   }
   return 0;
   error:
@@ -227,7 +223,7 @@ int GTBoard_MoveUnit(GTBoard* b, int unit, GTDirection d)
   if (GTBoard_IsUnit(b, pos)) {
     // attack opposing unit at pos
     GTBoard_DamageUnit(b, b->board[pos], 1);
-    GTStack_PushAndSet(&(b->stack), u->movement, u->movement - 1);
+    GTStack_PushAndSet(&(b->stack), u->movement, 0);
   }
   if (GTBoard_IsEmpty(b, pos)) {
     // if the unit is a producer, update b->resources
@@ -255,14 +251,24 @@ int GTBoard_MoveUnit(GTBoard* b, int unit, GTDirection d)
   return -1;
 }
 
-// int GTBoard_ProduceUnit(GTBoard* b, int unit, GTUnitType t, GTDirection d)
-// {
-//   check(!unitCanProduce[t], "unit cannot produce");
-
-//   return 0;
-//   error:
-//   return -1;
-// }
+int GTBoard_ProduceUnit(GTBoard* b, int unit, GTUnitType t, GTDirection d)
+{
+  check(GTBoard_IsValidUnit(b, unit), "invalid unit");
+  check(GTBoard_CanProduceUnit(b, unit, t, d), "unit cannot produce");
+  GTUnit* u = &b->units[unit];
+  int pos = GTDirection_Pos(u->pos, d);
+  GTStack_BeginPlay(&(b->stack));
+  GTBoard_CreateUnit(b, u->color, t, pos);
+  GTStack_PushAndSet(&b->stack, u->movement, 0);
+  GTStack_PushAndSet(&b->stack, b->didProduceUnit, 1);
+  if (unitCanProduce[t]) {
+    GTStack_PushAndSet(&b->stack, b->didProduceProducer, 1);
+  }
+  GTBoard_RevealTile(b, pos);
+  return 0;
+  error:
+  return -1;
+}
 
 int GTBoard_UndoPlay(GTBoard* b)
 {
