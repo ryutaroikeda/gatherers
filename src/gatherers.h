@@ -147,6 +147,8 @@ struct GTBoard
 struct_type(GTBoard);
 
 int GTBoard_Init(GTBoard* b);
+// return 1 if the boards are equal, except for err, stack, and entries
+int GTBoard_IsEqual(GTBoard b, GTBoard c);
 // return 1 if .board[pos] is valid
 int GTBoard_IsValid(const GTBoard* b, int pos);
 // return 1 if .board[pos] is empty

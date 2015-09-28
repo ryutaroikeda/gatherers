@@ -8,7 +8,20 @@ static char* Test_GTBoard_Init()
   mu_assert(GTBoard_Init(&b) == 0, "init failed");
   mu_assert(b.board[GTBoard_ValidMin] == GTBoard_Empty, 
     ".board[pos] not empty");
-  mu_assert(GTStack_IsEmpty(&(b.stack)), ".stack not empty");
+  mu_assert(GTStack_IsEmpty(&b.stack), ".stack not empty");
+  mu_assert(!b.didProduceUnit, ".didProduceUnit wrong");
+  return NULL;
+}
+
+static char* Test_GTBoard_IsEqual()
+{
+  GTBoard b;
+  GTBoard_Init(&b);
+  mu_assert(GTBoard_IsEqual(b, b), "not reflexive");
+  GTBoard c;
+  GTBoard_Init(&c);
+  c.board[0] = 389457;
+  mu_assert(!GTBoard_IsEqual(b, c), "unequal are equal");
   return NULL;
 }
 
@@ -113,9 +126,11 @@ static char* Test_GTBoard_CanProduceUnit()
   mu_assert(!GTBoard_CanProduceUnit(&b, 0, GTUnitType_Pikeman, 
    GTDirection_North), "can produce on invalid");
   mu_assert(GTBoard_CanProduceUnit(&b, 0, GTUnitType_Pikeman,
-   GTDirection_East), "cannot produce spearman");
+   GTDirection_East), "cannot produce pikeman");
   mu_assert(!GTBoard_CanProduceUnit(&b, 0, GTUnitType_Archer, 
    GTDirection_East), "can produce archer");
+  mu_assert(GTBoard_CanProduceUnit(&b, 0, GTUnitType_Gatherer,
+    GTDirection_East), "cannot produce gatherer");
   GTBoard_CreateUnit(&b, GTPlayer_White, GTUnitType_Gatherer,
    GTDirection_PosEast(GTBoard_ValidMin));
   mu_assert(!GTBoard_CanProduceUnit(&b, 0, GTUnitType_Gatherer, 
@@ -299,24 +314,25 @@ static char* Test_GTBoard_UndoPlay()
 {
   GTBoard b;
   GTBoard_Init(&b);
-  GTBoard c = b;
   mu_assert(GTBoard_UndoPlay(&b) == -1, "undoing with nothing to undo");
-  GTStack_BeginPlay(&(b.stack));
-  mu_assert(GTBoard_UndoPlay(&b) == 0, "failed undo");
-  b.err = c.err;
-  b.stack.err = c.stack.err;
-  mu_assert(memcmp(&b, &c, sizeof(GTBoard)), "undo didn't restore board");
   GTBoard_CreateUnit(&b, GTPlayer_Black, GTUnitType_Gatherer, GTBoard_ValidMin);
   GTBoard_ResetUnitMovement(&b, 0);
-  GTBoard d = b;
+  GTBoard c = b;
   mu_assert(GTBoard_MoveUnit(&b, 0, GTDirection_East) == 0, "can't move unit");
   mu_assert(GTBoard_UndoPlay(&b) == 0, "undo failed");
-  b.err = d.err;
-  b.stack.err = d.stack.err;
-  // popping and purging still keep entries on the stack
-  memcpy(b.entries, d.entries, sizeof(b.entries));
-  mu_assert(memcmp(&b, &d, sizeof(GTBoard)) == 0, "undo didn't restore board");
-  // to do: test undo with produceunit and range
+  mu_assert(GTBoard_IsEqual(b, c), "didn't undo move");
+  mu_assert(
+    GTBoard_ProduceUnit(&b, 0, GTUnitType_Gatherer, GTDirection_East) == 0,
+    "produce failed");
+  mu_assert(GTBoard_UndoPlay(&b) == 0, "undo failed");
+  mu_assert(GTBoard_IsEqual(b, c), "didn't undo produce");
+  int easteast = GTDirection_Pos(GTBoard_ValidMin, GTDirection_EastEast);
+  GTBoard_CreateUnit(&b, GTPlayer_White, GTUnitType_Archer, easteast);
+  GTBoard_ResetUnitMovement(&b, 1);
+  c = b;
+  mu_assert(GTBoard_Range(&b, 1, GTDirection_WestWest) == 0, "range failed");
+  mu_assert(GTBoard_UndoPlay(&b) == 0, "undo failed");
+  mu_assert(GTBoard_IsEqual(b, c), "didn't undo range");
   return NULL;
 }
 
@@ -324,6 +340,7 @@ static char* Test_All()
 {
   mu_suite_start();
   mu_run_test(Test_GTBoard_Init);
+  mu_run_test(Test_GTBoard_IsEqual);
   mu_run_test(Test_GTBoard_IsValid);
   mu_run_test(Test_GTBoard_IsEmpty);
   mu_run_test(Test_GTBoard_IsUnit);

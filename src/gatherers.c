@@ -51,8 +51,8 @@ const int GTDirection_Direction[GTDirection_Size] =
   -1,                                   // West
   -GTBoard_WidthMax - GTBoard_WidthMax, // NorthNorth
   1 + 1,                                // EastEast
-  -1 - 1,                               // WestWest
   GTBoard_Width + GTBoard_Width,        // SouthSouth
+  -1 - 1,                               // WestWest
   -GTBoard_WidthMax + 1,                // NorthEast
   -GTBoard_WidthMax - 1,                // NorthWest
   GTBoard_WidthMax + 1,                 // SouthEast
@@ -73,6 +73,10 @@ int GTBoard_Init(GTBoard* b)
   memset(b->population[0], 0, sizeof(int) * GTPlayer_Size * GTUnitType_Size);
   memset(b->resources[0], 0, sizeof(int) * GTPlayer_Size * GTTileType_Size);
   b->unitId = 0;
+  b->didProduceProducer = 0;
+  b->didProduceUnit = 0;
+  b->turn = 0;
+  b->err = GTBoardError_None;
   int i;
   for(i = 0; i < GTBoard_ValidMin; i++) {
     b->board[i] = GTBoard_Invalid;
@@ -85,6 +89,15 @@ int GTBoard_Init(GTBoard* b)
     b->board[(i+1) * GTBoard_WidthMax - 1] = GTBoard_Invalid;
   }
   return 0;
+}
+
+int GTBoard_IsEqual(GTBoard b, GTBoard c)
+{
+  b.err = c.err;
+  b.stack.err = c.stack.err;
+  // popping and purging still keep entries on the stack so don't check them
+  memcpy(b.entries, c.entries, sizeof(b.entries));
+  return memcmp(&b, &c, sizeof(GTBoard)) == 0;
 }
 
 int GTBoard_IsValid(const GTBoard* b, int pos)
@@ -143,8 +156,9 @@ GTBoard_CanProduceUnit(const GTBoard* b, int unit, GTUnitType t, GTDirection d)
   if (u->movement <= 0) { return 0; }
   int pos = GTDirection_Pos(u->pos, d);
   if (!GTBoard_IsEmpty(b, pos)) { return 0; }
-  if ((unitCanProduce[t]) && b->didProduceUnit) { return 0; }
+  if (unitCanProduce[t] && b->didProduceUnit) { return 0; }
   GTTileType tile = b->tiles[u->pos].type;
+  if (t == GTUnitType_Gatherer) { return 1; }
   if (t != tileProduct[tile]) { return 0; }
   if (b->resources[u->color][tile] <= b->population[u->color][t]) { return 0; }
   return 1;
@@ -153,7 +167,6 @@ GTBoard_CanProduceUnit(const GTBoard* b, int unit, GTUnitType t, GTDirection d)
 int GTBoard_CanRange(const GTBoard* b, int unit, GTDirection d)
 {
   if (!GTBoard_IsValidUnit(b, unit)) { return 0; }
-  if (d == GTDirection_None) { return 0; } // don't allow self-harm
   const GTUnit* u = &b->units[unit];
   if (unitRange[u->type] < distance[d]) { return 0; }
   if (u->movement <= 0) { return 0; }
