@@ -1,5 +1,5 @@
 #include "dbg.h"
-#include "gatherers.h"
+#include "board.h"
 
 static const GTUnitType tileProduct[GTTileType_Size] =
 {
@@ -149,6 +149,7 @@ int GTBoard_CanMoveUnit(const GTBoard* b, int unit, GTDirection d)
 int
 GTBoard_CanProduceUnit(const GTBoard* b, int unit, GTUnitType t, GTDirection d)
 {
+  if (t == GTUnitType_None) { return 0; }
   if (!GTBoard_IsValidUnit(b, unit)) { return 0; }
   if (b->didProduceProducer) { return 0; }
   const GTUnit* u = &b->units[unit];
@@ -350,6 +351,21 @@ int GTBoard_UndoPlay(GTBoard* b)
   return 0;
   error:
   b->err = GTBoardError_FailedUndoPlay;
+  return -1;
+}
+
+int GTBoard_EndTurn(GTBoard* b)
+{
+  GTStack_PushAndSet(&b->stack, b->turn, b->turn + 1);
+  int i;
+  for (i = GTBoard_ValidMin; i < GTBoard_InvalidMin; i++) {
+    if (!GTBoard_IsValidUnit(b, i)) { continue; }
+    GTBoard_ResetUnitMovement(b, i);
+  }
+  GTStack_BeginTurn(&b->stack);
+  check(b->stack.err == GTStackError_None, "stack error");
+  return 0;
+  error:
   return -1;
 }
 

@@ -1,83 +1,13 @@
-#ifndef __gatherers_h__
-#define __gatherers_h__
+#ifndef __board_h__
+#define __board_h__
 #include "util.h"
+#include "types.h"
 #include "stack.h"
 
 //
 // Unless otherwise stated, the functions below return 0 on success and a
 // negative integer on failure.
 //
-
-enum GTTileType
-{
-  GTTileType_None,
-  GTTileType_Plains,
-  GTTileType_Wood,
-  GTTileType_Horse,
-  GTTileType_Iron,
-  GTTileType_Lake,
-  GTTileType_Mountain,
-  GTTileType_Size
-};
-enum_type(GTTileType);
-
-struct GTTile
-{
-  GTTileType type;
-  int isRevealed;
-};
-struct_type(GTTile);
-
-enum GTPlayer
-{
-  GTPlayer_None,
-  GTPlayer_Black,
-  GTPlayer_White,
-  GTPlayer_Size
-};
-enum_type(GTPlayer);
-
-enum GTUnitType
-{
-  GTUnitType_None,
-  GTUnitType_Gatherer,
-  GTUnitType_Archer,
-  GTUnitType_Cavalry,
-  GTUnitType_Pikeman,
-  GTUnitType_Fortress,
-  GTUnitType_Size
-};
-enum_type(GTUnitType);
-
-struct GTUnit
-{
-  GTPlayer color;
-  GTUnitType type;
-  int pos;
-  int life;
-  int movement;
-};
-struct_type(GTUnit);
-
-// GTBoard_Range() depends on this ordering
-enum GTDirection
-{
-  GTDirection_None,
-  GTDirection_North,
-  GTDirection_East,
-  GTDirection_South,
-  GTDirection_West,
-  GTDirection_NorthNorth,
-  GTDirection_EastEast,
-  GTDirection_SouthSouth,
-  GTDirection_WestWest,
-  GTDirection_NorthEast,
-  GTDirection_NorthWest,
-  GTDirection_SouthEast,
-  GTDirection_SouthWest,
-  GTDirection_Size
-};
-enum_type(GTDirection);
 
 extern const int GTDirection_Direction[GTDirection_Size];
 
@@ -146,6 +76,8 @@ struct GTBoard
 };
 struct_type(GTBoard);
 
+#define GTBoard_Pos(rank, file) (1 + (rank) + (file) * GTBoard_WidthMax)
+
 int GTBoard_Init(GTBoard* b);
 // return 1 if the boards are equal, except for err, stack, and entries
 int GTBoard_IsEqual(GTBoard b, GTBoard c);
@@ -184,5 +116,7 @@ int GTBoard_ProduceUnit(GTBoard* b, int unit, GTUnitType t, GTDirection d);
 int GTBoard_Range(GTBoard* b, int unit, GTDirection d);
 
 int GTBoard_UndoPlay(GTBoard* b);
+
+int GTBoard_EndTurn(GTBoard* b);
 
 #endif

@@ -1,5 +1,5 @@
 #include "minunit.h"
-#include "gatherers.h"
+#include "board.h"
 #include <string.h>
 
 static char* Test_GTBoard_Init()
@@ -336,6 +336,14 @@ static char* Test_GTBoard_UndoPlay()
   return NULL;
 }
 
+static char* Test_GTBoard_EndTurn()
+{
+  GTBoard b;
+  GTBoard_Init(&b);
+  mu_assert(GTBoard_EndTurn(&b) == 0, "endturn failed");
+  return NULL;
+}
+
 static char* Test_All()
 {
   mu_suite_start();
@@ -358,6 +366,7 @@ static char* Test_All()
   mu_run_test(Test_GTBoard_Range);
   mu_run_test(Test_GTBoard_ProduceUnit);
   mu_run_test(Test_GTBoard_UndoPlay);
+  mu_run_test(Test_GTBoard_EndTurn);
   return NULL;
 }
 
