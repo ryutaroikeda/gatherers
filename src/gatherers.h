@@ -37,17 +37,14 @@ enum GTPlayer
 };
 enum_type(GTPlayer);
 
-// return 1 if black and white
-int GTPlayer_IsOpposite(GTPlayer p, GTPlayer q);
-
 enum GTUnitType
 {
   GTUnitType_None,
   GTUnitType_Gatherer,
   GTUnitType_Archer,
   GTUnitType_Cavalry,
-  GTUnitType_Spearman,
-  GTUnitType_Castle,
+  GTUnitType_Pikeman,
+  GTUnitType_Fortress,
   GTUnitType_Size
 };
 enum_type(GTUnitType);
@@ -62,6 +59,7 @@ struct GTUnit
 };
 struct_type(GTUnit);
 
+// GTBoard_Range() depends on this ordering
 enum GTDirection
 {
   GTDirection_None,
@@ -69,6 +67,14 @@ enum GTDirection
   GTDirection_East,
   GTDirection_South,
   GTDirection_West,
+  GTDirection_NorthNorth,
+  GTDirection_EastEast,
+  GTDirection_SouthSouth,
+  GTDirection_WestWest,
+  GTDirection_NorthEast,
+  GTDirection_NorthWest,
+  GTDirection_SouthEast,
+  GTDirection_SouthWest,
   GTDirection_Size
 };
 enum_type(GTDirection);
@@ -156,6 +162,8 @@ int GTBoard_CanMoveUnit(const GTBoard* b, int unit, GTDirection d);
 
 int
 GTBoard_CanProduceUnit(const GTBoard* b, int unit, GTUnitType t, GTDirection d);
+// return 1 if unit can perform a ranged attack on d
+int GTBoard_CanRange(const GTBoard* b, int unit, GTDirection d);
 
 int GTBoard_RevealTile(GTBoard* b, int pos);
 
@@ -170,6 +178,8 @@ int GTBoard_DamageUnit(GTBoard* b, int unit, int damage);
 int GTBoard_MoveUnit(GTBoard* b, int unit, GTDirection d);
 
 int GTBoard_ProduceUnit(GTBoard* b, int unit, GTUnitType t, GTDirection d);
+
+int GTBoard_Range(GTBoard* b, int unit, GTDirection d);
 
 int GTBoard_UndoPlay(GTBoard* b);
 

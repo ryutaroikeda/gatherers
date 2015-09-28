@@ -83,6 +83,8 @@ static char* Test_GTBoard_CanMoveUnit()
    "can't move to valid");
   mu_assert(!GTBoard_CanMoveUnit(&b, 0, GTDirection_West),
    "can move to invalid");
+  mu_assert(!GTBoard_CanMoveUnit(&b, 0, GTDirection_EastEast),
+    "can move easteast");
   GTBoard_CreateUnit(&b, GTPlayer_White, GTUnitType_None,
     GTDirection_PosEast(GTBoard_ValidMin));
   mu_assert(!GTBoard_CanMoveUnit(&b, 0, GTDirection_East),
@@ -93,7 +95,7 @@ static char* Test_GTBoard_CanMoveUnit()
   b.units[0].color = GTPlayer_White;
   mu_assert(!GTBoard_CanMoveUnit(&b, 0, GTDirection_East),
     "attacking unit can move on friendly unit");
-  b.units[0].type = GTUnitType_Castle;
+  b.units[0].type = GTUnitType_Fortress;
   mu_assert(!GTBoard_CanMoveUnit(&b, 0, GTDirection_South),
    "can move non-moving unit");
   return NULL;
@@ -108,9 +110,9 @@ static char* Test_GTBoard_CanProduceUnit()
   mu_assert(!GTBoard_CanProduceUnit(&b, 0, GTUnitType_Gatherer,
    GTDirection_East), "can produce with no movement");
   GTBoard_ResetUnitMovement(&b, 0);
-  mu_assert(!GTBoard_CanProduceUnit(&b, 0, GTUnitType_Spearman, 
+  mu_assert(!GTBoard_CanProduceUnit(&b, 0, GTUnitType_Pikeman, 
    GTDirection_North), "can produce on invalid");
-  mu_assert(GTBoard_CanProduceUnit(&b, 0, GTUnitType_Spearman,
+  mu_assert(GTBoard_CanProduceUnit(&b, 0, GTUnitType_Pikeman,
    GTDirection_East), "cannot produce spearman");
   mu_assert(!GTBoard_CanProduceUnit(&b, 0, GTUnitType_Archer, 
    GTDirection_East), "can produce archer");
@@ -118,6 +120,23 @@ static char* Test_GTBoard_CanProduceUnit()
    GTDirection_PosEast(GTBoard_ValidMin));
   mu_assert(!GTBoard_CanProduceUnit(&b, 0, GTUnitType_Gatherer, 
     GTDirection_East), "can produce on top of unit");
+  return NULL;
+}
+
+static char* Test_GTBoard_CanRange()
+{
+  GTBoard b;
+  GTBoard_Init(&b);
+  GTBoard_CreateUnit(&b, GTPlayer_Black, GTUnitType_Archer, GTBoard_ValidMin);
+  mu_assert(!GTBoard_CanRange(&b, 0, GTDirection_East),
+    "unit with no movement can range");
+  GTBoard_ResetUnitMovement(&b, 0);
+  mu_assert(!GTBoard_CanRange(&b, 0, GTDirection_East), "unit can range empty");
+  GTBoard_CreateUnit(&b, GTPlayer_Black, GTUnitType_Archer, 
+    GTDirection_Pos(GTBoard_ValidMin, GTDirection_EastEast));
+  mu_assert(!GTBoard_CanRange(&b, 0, GTDirection_EastEast), "can range friend");
+  b.units[0].color = GTPlayer_White;
+  mu_assert(GTBoard_CanRange(&b, 0, GTDirection_EastEast), "can't range");
   return NULL;
 }
 
@@ -253,6 +272,29 @@ static char* Test_GTBoard_ProduceUnit()
   return NULL;
 }
 
+static char* Test_GTBoard_Range()
+{
+  GTBoard b;
+  GTBoard_Init(&b);
+  int east = GTDirection_PosEast(GTBoard_ValidMin);
+  int easteast = GTDirection_Pos(GTBoard_ValidMin, GTDirection_EastEast);
+  b.tiles[east].type = GTTileType_Mountain;
+  mu_assert(GTBoard_Range(&b, 0, GTDirection_South) == -1,
+   "invalid unit ranged");
+  GTBoard_CreateUnit(&b, GTPlayer_Black, GTUnitType_Archer, GTBoard_ValidMin);
+  GTBoard_CreateUnit(&b, GTPlayer_White, GTUnitType_Archer, easteast);
+  GTBoard_ResetUnitMovement(&b, 0);
+  mu_assert(GTBoard_Range(&b, 0, GTDirection_EastEast) == -1,
+    "mountain ignored");
+  mu_assert(b.tiles[east].isRevealed, "mountain not revealed");
+  b.tiles[east].type = GTTileType_Plains;
+  GTBoard_ResetUnitMovement(&b, 0);
+  mu_assert(GTBoard_Range(&b, 0, GTDirection_EastEast) == 0, "range failed");
+  mu_assert(GTBoard_IsEmpty(&b, easteast), "board not empty");
+  mu_assert(b.units[1].life == 0, "unit not damaged");
+  return NULL;
+}
+
 static char* Test_GTBoard_UndoPlay()
 {
   GTBoard b;
@@ -274,6 +316,7 @@ static char* Test_GTBoard_UndoPlay()
   // popping and purging still keep entries on the stack
   memcpy(b.entries, d.entries, sizeof(b.entries));
   mu_assert(memcmp(&b, &d, sizeof(GTBoard)) == 0, "undo didn't restore board");
+  // to do: test undo with produceunit and range
   return NULL;
 }
 
@@ -288,12 +331,14 @@ static char* Test_All()
   mu_run_test(Test_GTBoard_IsValidUnit);
   mu_run_test(Test_GTBoard_CanMoveUnit);
   mu_run_test(Test_GTBoard_CanProduceUnit);
+  mu_run_test(Test_GTBoard_CanRange);
   mu_run_test(Test_GTBoard_RevealTile);
   mu_run_test(Test_GTBoard_CreateUnit);
   mu_run_test(Test_GTBoard_ResetUnitMovement);
   mu_run_test(Test_GTBoard_DeleteUnit);
   mu_run_test(Test_GTBoard_DamageUnit);
   mu_run_test(Test_GTBoard_MoveUnit);
+  mu_run_test(Test_GTBoard_Range);
   mu_run_test(Test_GTBoard_ProduceUnit);
   mu_run_test(Test_GTBoard_UndoPlay);
   return NULL;
