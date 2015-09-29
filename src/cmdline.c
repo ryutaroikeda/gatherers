@@ -10,6 +10,7 @@ static const char* cmd[] =
   "rg",
   "pd",
   "st",
+  "undo",
   "dn",
   "exit"
 };
@@ -58,6 +59,7 @@ int GTCommand_ParsePos(GTCommand* c, const char* tok)
   check(strlen(tok) == 2, "incorrect len");
   c->rank = tok[0] - 'a';
   c->file = tok[1] - '1';
+  log_info("parsepos: rank = %d, file = %d\n", c->rank, c->file);
   return 0;
   error:
   return -1;
@@ -99,6 +101,7 @@ int GTCommand_ParseDir(GTCommand* c, const char* tok)
   return -1;
 }
 
+// to do: support undo
 int GTCommand_Parse(GTCommand* c, char* s)
 {
   c->err = GTCommandError_None;

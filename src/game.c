@@ -44,10 +44,13 @@ int GTGame_DoCommand(GTGame* g, GTCommand* c)
   check_debug(g->p == p, "tried moving wrong color");
   int err = 0;
   if (c->cmd == GTCommandType_Move) {
+    log_info("moving unit %d", unit);
     err = GTBoard_MoveUnit(g->b, unit, c->d);
   } else if (c->cmd == GTCommandType_Range) {
+    log_info("ranging with %d", unit);
     err = GTBoard_Range(g->b, unit, c->d);
   } else if (c->cmd == GTCommandType_Produce) {
+    log_info("producing with %d", unit);
     err = GTBoard_ProduceUnit(g->b, unit, c->t, c->d);
   }
   check_debug(err == 0, "error with command");
@@ -70,11 +73,13 @@ int GTGame_EndTurn(GTGame* g)
   return -1;
 }
 
-int GTGame_Play(GTGame* g)
+int GTGame_PlayExplicit(GTGame* g, CommandGetter cg)
 {
   while (1) {
     GTCommand c;
-    if (GTCommand_GetStdin(&c) == -1) {
+    fprintf(stdout, "player %d's turn, enter command", g->p);
+    GTBoard_Print(g->b);
+    if ((*cg)(&c) == -1) {
       fprintf(stdout, "bad command, try again\n");
       continue;
     }
@@ -93,3 +98,7 @@ int GTGame_Play(GTGame* g)
   return 0;
 }
 
+int GTGame_Play(GTGame* g)
+{
+  return GTGame_PlayExplicit(g, &GTCommand_GetStdin);
+}

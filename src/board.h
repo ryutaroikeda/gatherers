@@ -76,9 +76,12 @@ struct GTBoard
 };
 struct_type(GTBoard);
 
-#define GTBoard_Pos(rank, file) (1 + (rank) + (file) * GTBoard_WidthMax)
+#define GTBoard_Pos(rank, file) \
+(GTBoard_ValidMin + (rank) + ((GTBoard_Height - 1 - (file)) * GTBoard_WidthMax))
 
 int GTBoard_Init(GTBoard* b);
+
+int GTBoard_Print(const GTBoard* b);
 // return 1 if the boards are equal, except for err, stack, and entries
 int GTBoard_IsEqual(GTBoard b, GTBoard c);
 // return 1 if .board[pos] is valid

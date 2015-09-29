@@ -14,6 +14,8 @@ struct GTGame
 };
 struct_type(GTGame);
 
+typedef int (*CommandGetter)(struct GTCommand*);
+
 int GTGame_Init(GTGame* g, struct GTBoard* b);
 // return 1 if the game has ended
 int GTGame_IsEnd(const GTGame* g);
@@ -21,6 +23,8 @@ int GTGame_IsEnd(const GTGame* g);
 int GTGame_DoCommand(GTGame* g, struct GTCommand* c);
 
 int GTGame_EndTurn(GTGame* g);
+
+int GTGame_PlayExplicit(GTGame* g, CommandGetter cg);
 
 int GTGame_Play(GTGame* g);
 

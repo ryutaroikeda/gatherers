@@ -26,6 +26,7 @@ enum GTCommandType
   GTCommandType_Range,
   GTCommandType_Produce,
   GTCommandType_Stay,
+  GTCommandType_Undo,
   GTCommandType_Done,
   GTCommandType_Exit,
   GTCommandType_Size

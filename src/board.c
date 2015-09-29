@@ -64,6 +64,13 @@ static const int distance[GTDirection_Size] =
   0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2
 };
 
+static const char unit[GTPlayer_Size][GTUnitType_Size] =
+{
+  { ' ', ' ', ' ', ' ', ' ', ' ' },
+  { ' ', 'g', 'a', 'c', 'p', 'f' },
+  { ' ', 'G', 'A', 'C', 'P', 'F' }
+};
+
 int GTBoard_Init(GTBoard* b)
 {
   memset(b->tiles, 0, sizeof(GTTile) * GTBoard_Size);
@@ -88,6 +95,29 @@ int GTBoard_Init(GTBoard* b)
     b->board[i * GTBoard_WidthMax] = GTBoard_Invalid;
     b->board[(i+1) * GTBoard_WidthMax - 1] = GTBoard_Invalid;
   }
+  return 0;
+}
+
+int GTBoard_Print(const GTBoard* b)
+{
+  fprintf(stdout, "\n  a b c d e\n");
+  int i, j;
+  for (i = GTBoard_Height - 1; i >= 0; i--) {
+    fprintf(stdout, "%d", i + 1);
+    for (j = 0; j < GTBoard_Width; j++) {
+      int pos = GTBoard_Pos(j, i);
+      int u = b->board[pos];
+      if (u == GTBoard_Empty) {
+        fprintf(stdout, " .");
+      } else {
+        int type = b->units[u].type;
+        int color = b->units[u].color;
+        fprintf(stdout, " %c", unit[color][type]);
+      }
+    }
+    fprintf(stdout, "\n");
+  }
+  fprintf(stdout, "\n");
   return 0;
 }
 
@@ -359,8 +389,9 @@ int GTBoard_EndTurn(GTBoard* b)
   GTStack_PushAndSet(&b->stack, b->turn, b->turn + 1);
   int i;
   for (i = GTBoard_ValidMin; i < GTBoard_InvalidMin; i++) {
-    if (!GTBoard_IsValidUnit(b, i)) { continue; }
-    GTBoard_ResetUnitMovement(b, i);
+    int unit = b->board[i];
+    if (!GTBoard_IsValidUnit(b, unit)) { continue; }
+    GTBoard_ResetUnitMovement(b, unit);
   }
   GTStack_BeginTurn(&b->stack);
   check(b->stack.err == GTStackError_None, "stack error");
