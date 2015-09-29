@@ -3,7 +3,7 @@
 
 #include "util.h"
 #include "types.h"
-
+#include "io.h"
 //
 // syntax of cmdmands
 //
@@ -64,5 +64,9 @@ int GTCommand_ParseUnit(GTCommand* c, const char* tok);
 int GTCommand_ParseDir(GTCommand* c, const char* tok);
 
 int GTCommand_Parse(GTCommand* c, char* s);
+// get command from a stream
+int GTCommand_Get(GTCommand* c, GTCharGetter g);
+// get command from stdin
+int GTCommand_GetStdin(GTCommand* c);
 
 #endif

@@ -1,20 +1,28 @@
 #include "minunit.h"
 #include "game.h"
+#include "board.h"
+#include "cmdline.h"
 
 static char* Test_GTGame_Init()
 {
   GTGame g;
-  GTGame_Init(&g);
+  GTBoard b;
+  GTGame_Init(&g, &b);
   mu_assert(g.p = GTPlayer_Black, ".p(layer) wrong");
-  mu_assert(g.b.board[GTGame_BlackStart] == 0, ".b.board wrong");
-  mu_assert(g.b.board[GTGame_WhiteStart] == 1, ".b.board wrong");
   return NULL;
 }
 
 static char* Test_GTGame_IsEnd()
 {
   GTGame g;
-  GTGame_Init(&g);
+  GTBoard b;
+  GTBoard_Init(&b);
+  GTGame_Init(&g, &b);
+  mu_assert(GTGame_IsEnd(&g), "game not ended");
+  GTBoard_CreateUnit(&b, GTPlayer_Black, GTUnitType_Gatherer, GTBoard_ValidMin);
+  mu_assert(GTGame_IsEnd(&g), "game not ended");
+  GTBoard_CreateUnit(&b, GTPlayer_White, GTUnitType_Gatherer,
+   GTBoard_ValidMin + 1);
   mu_assert(!GTGame_IsEnd(&g), "game is ended");
   return NULL;
 }
@@ -22,7 +30,9 @@ static char* Test_GTGame_IsEnd()
 static char* Test_GTGame_DoCommand()
 {
   GTGame g;
-  GTGame_Init(&g);
+  GTBoard b;
+  GTBoard_Init(&b);
+  GTGame_Init(&g, &b);
   GTCommand c;
   GTCommand_Init(&c);
   mu_assert(GTGame_DoCommand(&g, &c) == -1, "illegal cmdmand valid");
@@ -37,7 +47,9 @@ static char* Test_GTGame_DoCommand()
 static char* Test_GTGame_EndTurn()
 {
   GTGame g;
-  GTGame_Init(&g);
+  GTBoard b;
+  GTBoard_Init(&b);
+  GTGame_Init(&g, &b);
   mu_assert(GTGame_EndTurn(&g) == 0, "endturn failed");
   mu_assert(g.p == GTPlayer_White, ".p wrong");
   mu_assert(GTGame_EndTurn(&g) == 0, "end turn failed");

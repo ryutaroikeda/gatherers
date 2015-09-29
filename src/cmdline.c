@@ -134,4 +134,19 @@ int GTCommand_Parse(GTCommand* c, char* s)
   return -1;
 }
 
+int GTCommand_Get(GTCommand* c, GTCharGetter g)
+{
+  char buf[256];
+  if (GTGetLineExplicit(g, buf, 256) == -1) {
+    log_warn("something wrong with GetLine");
+  }
+  check(GTCommand_Parse(c, buf) == 0, "Parse failed");
+  return 0;
+  error:
+  return -1;
+}
 
+int GTCommand_GetStdin(GTCommand* c)
+{
+  return GTCommand_Get(c, &GTGetCharFromStdin);
+}
