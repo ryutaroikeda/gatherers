@@ -17,7 +17,7 @@ static int Test_GetCommand ## i (GTCommand* c) \
   return GTCommand_Get(c, &Test_CharGet ## i); \
 }
 
-static char input1[] = "done\nc1 mv n\ndone\nc6 mv s\ndone\nc2 pd g n\nexit";
+static char input1[] = "done\nmv c1 n\ndone\nmv c6 s\ndone\npd c2 n g\nexit";
 Test_GetCommand(1)
 
 static char* Test_1()
@@ -39,19 +39,41 @@ static char* Test_1()
   return NULL;
 }
 
-// static char input2[] = "";
-// Test_GetCommand(2)
+static char input2[] = "rg c4 ss\nexit";
+Test_GetCommand(2)
 
-// static char* Test_2()
-// {
-
-//   return NULL;
-// }
+static char* Test_2()
+{
+  char file[] =
+  "tiles {"
+  " w, m, h, i, w,"
+  " p, h, w, m, h,"
+  " m, i, p, m, i,"
+  " i, m, p, i, m,"
+  " h, m, w, h, p,"
+  " w, i, h, m, w, }"
+  "units {"
+  "--,--,g1,--,--,"
+  "--,--,--,--,--,"
+  "--,--,a1,--,--,"
+  "--,--,S3,--,--,"
+  "--,--,G1,--,--,"
+  "--,--,G1,--,--, }";
+  GTBoard b;
+  GTBoard_Init(&b);
+  GTBoard_Parse(&b, file);
+  GTGame g;
+  GTGame_Init(&g, &b);
+  GTGame_PlayExplicit(&g, &Test_GetCommand2);
+  mu_assert(GTBoard_IsEmpty(&b, GTBoard_Pos(2, 1)), "range failed");
+  return NULL;
+}
 
 static char* Test_All()
 {
   mu_suite_start();
   mu_run_test(Test_1);
+  mu_run_test(Test_2);
   return NULL;
 }
 

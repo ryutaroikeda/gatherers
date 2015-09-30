@@ -53,7 +53,7 @@ const int GTDirection_Direction[GTDirection_Size] =
   -1,                                   // West
   -GTBoard_WidthMax - GTBoard_WidthMax, // NorthNorth
   1 + 1,                                // EastEast
-  GTBoard_Width + GTBoard_Width,        // SouthSouth
+  GTBoard_WidthMax + GTBoard_WidthMax,  // SouthSouth
   -1 - 1,                               // WestWest
   -GTBoard_WidthMax + 1,                // NorthEast
   -GTBoard_WidthMax - 1,                // NorthWest
@@ -83,12 +83,12 @@ static const char tileChar[2][GTTileType_Size] =
   { ' ', 'P', 'W', 'H', 'I', 'L', 'M' }
 };
 
-static const char* fileTokens[] =
+static const char* fileTokens[GTBoardFileToken_Size] =
 {
   "",
   "units",
   "tiles",
-  "end"
+  "options"
 };
 
 int GTBoard_Init(GTBoard* b)
@@ -177,6 +177,7 @@ int
 GTBoard_CanProduceUnit(const GTBoard* b, int unit, GTUnitType t, GTDirection d)
 {
   if (t == GTUnitType_None) { return 0; }
+  if (distance[d] > 1) { return 0; }
   if (!GTBoard_IsValidUnit(b, unit)) { return 0; }
   if (b->didProduceProducer) { return 0; }
   const GTUnit* u = &b->units[unit];
@@ -191,7 +192,7 @@ GTBoard_CanProduceUnit(const GTBoard* b, int unit, GTUnitType t, GTDirection d)
   if (b->resources[u->color][tile] <= b->population[u->color][t]) { return 0; }
   return 1;
 }
-
+// to do: check for revealed mountain
 int GTBoard_CanRange(const GTBoard* b, int unit, GTDirection d)
 {
   if (!GTBoard_IsValidUnit(b, unit)) { return 0; }
@@ -227,7 +228,8 @@ int GTBoard_CreateUnit(GTBoard* b, GTPlayer p, GTUnitType t, int pos)
   GTStack_PushAndSet(&b->stack, b->board[pos], b->unitId);
   GTStack_PushAndSet(&b->stack, b->unitId, b->unitId + 1);
   GTStack_PushAndSet(&b->stack, b->population[p][t], b->population[p][t] + 1);
-  // if unit is a producer, update b->resources
+  GTBoard_RevealTile(b, pos);
+  // if unit is a producer, update resources
   if (unitCanProduce[t]) {
     GTTileType tile = b->tiles[pos].type;
     GTStack_PushAndSet(&b->stack, b->resources[p][tile],
@@ -330,7 +332,6 @@ int GTBoard_ProduceUnit(GTBoard* b, int unit, GTUnitType t, GTDirection d)
   if (unitCanProduce[t]) {
     GTStack_PushAndSet(&b->stack, b->didProduceProducer, 1);
   }
-  GTBoard_RevealTile(b, pos);
   return 0;
   error:
   return -1;
@@ -383,6 +384,8 @@ int GTBoard_UndoPlay(GTBoard* b)
 int GTBoard_EndTurn(GTBoard* b)
 {
   GTStack_PushAndSet(&b->stack, b->turn, b->turn + 1);
+  GTStack_PushAndSet(&b->stack, b->didProduceProducer, 0);
+  GTStack_PushAndSet(&b->stack, b->didProduceUnit, 0);
   int i;
   for (i = GTBoard_ValidMin; i < GTBoard_InvalidMin; i++) {
     int unit = b->board[i];
@@ -456,7 +459,10 @@ int GTBoard_ParseTile(GTBoard* b, char tok, int pos)
   for (i = 0; i < GTTileType_Size; i++) {
     if (tok != tileChar[isRevealed][i]) { continue; }
     b->tiles[pos].type = i;
-    b->tiles[pos].isRevealed = isRevealed;
+    // make sure the position is not occupied by a unit
+    if (GTBoard_IsEmpty(b, pos) || isRevealed) {
+      b->tiles[pos].isRevealed = isRevealed;
+    }
     return 0;
   }
   return -1;
@@ -483,6 +489,8 @@ int GTBoard_ParseTiles(GTBoard* b, char* s)
 
 int GTBoard_Parse(GTBoard* b, char* s)
 {
+  b->err = GTBoardError_None;
+  int parsedUnits = 0;
   char* tok;
   GTLexer l;
   GTLexer_Init(&l, s);
@@ -492,8 +500,12 @@ int GTBoard_Parse(GTBoard* b, char* s)
     char* s = GTLexer_GetToken(&l, "}");
     if (strcmp(tok, fileTokens[GTBoardFileToken_Units]) == 0) {
       check(GTBoard_ParseUnits(b, s) == 0, "parsing units failed");
+      parsedUnits = 1;
     } else if (strcmp(tok, fileTokens[GTBoardFileToken_Tiles]) == 0) {
+      check(!parsedUnits, "tiles must be read before units");
       check(GTBoard_ParseTiles(b, s) == 0, "parsing tiles failed");
+    } else if (strcmp(tok, fileTokens[GTBoardFileToken_Options]) == 0) {
+      // do nothing
     } else {
       sentinel("unidentified token %.*s", 80, tok);
     }
@@ -501,32 +513,69 @@ int GTBoard_Parse(GTBoard* b, char* s)
   }
   return 0;
   error:
+  b->err = GTBoardError_BadParse;
   return -1;
 }
 
-// int GTBoard_Get(GTBoard* b, GTCharGetter cg)
-// {
-//   return 0;
-// }
-
-int GTBoard_Print(const GTBoard* b)
+int GTBoard_Print(const GTBoard* b, FILE* stream)
 {
-  fprintf(stdout, "\n  a  b  c  d  e\n");
+  fprintf(stream, "\n  a  b  c  d  e\n");
   int rank, file;
   for (file = GTBoard_Height - 1; file >= 0; file--) {
-    fprintf(stdout, "%d", file + 1);
+    fprintf(stream, "%d", file + 1);
     for (rank = 0; rank < GTBoard_Width; rank++) {
       int pos = GTBoard_Pos(rank, file);
       if (GTBoard_IsEmpty(b, pos)) {
-        fprintf(stdout, " . ");
+        fprintf(stream, " . ");
       } else {
         const GTUnit* u = &b->units[b->board[pos]];
-        fprintf(stdout, " %c%d", unitChar[u->color][u->type], u->life);
+        fprintf(stream, " %c%d", unitChar[u->color][u->type], u->life);
       }
     }
-    fprintf(stdout, "\n");
+    fprintf(stream, "\n");
   }
-  fprintf(stdout, "\n");
+  fprintf(stream, "\n");
   return 0;
 }
 
+int GTBoard_PrintTiles(const GTBoard* b, FILE* stream)
+{
+  fprintf(stream, "map\n  a  b  c  d  e\n");
+  int rank, file;
+  for (file = GTBoard_Height - 1; file >= 0; file--) {
+    fprintf(stream, "%d", file + 1);
+    for (rank = 0; rank < GTBoard_Width; rank++) {
+      int pos = GTBoard_Pos(rank, file);
+      const GTTile* tile = &b->tiles[pos];
+      if (!tile->isRevealed) {
+        fprintf(stream, " . ");
+      } else {
+        fprintf(stream, " %c ", tileChar[1][tile->type]);
+      }
+    }
+    fprintf(stream, "\n");
+  }
+  fprintf(stream, "\n");
+  return 0;
+}
+
+int GTBoard_PrintDemographics(const GTBoard* b, FILE* stream)
+{
+  int i, j;
+  for (i = GTPlayer_Black; i <= GTPlayer_White; i++) {
+    fprintf(stream, "\nPlayer %.1d:\n", i);
+    for (j = GTUnitType_Gatherer; j < GTUnitType_Size; j++) {
+      fprintf(stream, " %c ", unitChar[i][j]);
+    }
+    fprintf(stream, "| w  h  i  l\n");
+    for (j = GTUnitType_Gatherer; j < GTUnitType_Size; j++) {
+      fprintf(stream, " %d ", b->population[i][j]);
+    }
+    fprintf(stream, "|");
+    for (j = GTTileType_Wood; j <= GTTileType_Lake; j++) {
+      fprintf(stream, " %d ", b->resources[i][j]);
+    }
+  }
+  fprintf(stream, "\n");
+  return 0;
+}

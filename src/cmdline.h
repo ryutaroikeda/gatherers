@@ -1,5 +1,5 @@
-#ifndef __cmdline_h__
-#define __cmdline_h__
+#ifndef _GTCMDLINE_H_
+#define _GTCMDLINE_H_
 
 #include "util.h"
 #include "types.h"
@@ -29,6 +29,7 @@ enum GTCommandType
   GTCommandType_Undo,
   GTCommandType_Done,
   GTCommandType_Exit,
+  GTCommandType_Info,
   GTCommandType_Size
 };
 enum_type(GTCommandType);

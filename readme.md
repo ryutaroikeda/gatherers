@@ -7,14 +7,15 @@ A boardgame for two players.
 * board tile randomisation
 * <del>win check and resignation</del>
 * command line ui
-	* 'help' 
+	* 'help'
 	* 'info' command
-* board parser
+* <del>board parser</del>
 * save and load game
 * AI (monte carlo tree search)
 * server
 * client javascript
 * user manual
+* license
 
 ### Optional
 * GUI

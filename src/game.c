@@ -27,17 +27,21 @@ int GTGame_IsEnd(const GTGame* g)
 int GTGame_DoCommand(GTGame* g, GTCommand* c)
 {
   c->err = GTCommandError_None;
+  check_debug(c->cmd != GTCommandType_None, "command needed");
   if (c->cmd == GTCommandType_Exit) {
     c->err = GTCommandError_Exit;
     return -1;
   }
-  check_debug(c->cmd != GTCommandType_None, "command needed");
   if (c->cmd == GTCommandType_Done) { 
     GTGame_EndTurn(g);
     return 0;
   }
   if (c->cmd == GTCommandType_Undo) {
     check_debug(GTBoard_UndoPlay(g->b) == 0, "cannot undo");
+    return 0;
+  }
+  if (c->cmd == GTCommandType_Info) {
+    GTGame_PrintInfo(g, stdout);
     return 0;
   }
   int pos = GTBoard_Pos(c->rank, c->file);
@@ -79,10 +83,12 @@ int GTGame_EndTurn(GTGame* g)
 
 int GTGame_PlayExplicit(GTGame* g, CommandGetter cg)
 {
+  // end turn zero to reset unit movement
+  GTBoard_EndTurn(g->b);
   while (1) {
     GTCommand c;
-    fprintf(stdout, "player %d's turn, enter command", g->p);
-    GTBoard_Print(g->b);
+    GTBoard_Print(g->b, stdout);
+    fprintf(stdout, "player %d: ", g->p);
     if ((*cg)(&c) == -1) {
       fprintf(stdout, "bad command, try again\n");
       continue;
@@ -105,4 +111,11 @@ int GTGame_PlayExplicit(GTGame* g, CommandGetter cg)
 int GTGame_Play(GTGame* g)
 {
   return GTGame_PlayExplicit(g, &GTCommand_GetStdin);
+}
+
+int GTGame_PrintInfo(const GTGame* g, FILE* stream) 
+{
+  GTBoard_PrintDemographics(g->b, stream);
+  GTBoard_PrintTiles(g->b, stream);
+  return 0;
 }

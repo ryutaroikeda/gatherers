@@ -3,7 +3,6 @@
 #include "util.h"
 #include "types.h"
 #include "stack.h"
-#include "io.h"
 
 //
 // Unless otherwise stated, the functions below return 0 on success and a
@@ -28,6 +27,7 @@ enum GTBoardError
   GTBoardError_None,
   GTBoardError_CannotMoveUnit,
   GTBoardError_FailedUndoPlay,
+  GTBoardError_BadParse,
   GTBoardError_Size
 };
 enum_type(GTBoardError);
@@ -37,6 +37,7 @@ enum GTBoardFileToken
   GTBoardFileToken_None,
   GTBoardFileToken_Units,
   GTBoardFileToken_Tiles,
+  GTBoardFileToken_Options,
   GTBoardFileToken_Size
 };
 enum_type(GTBoardFileToken);
@@ -139,9 +140,11 @@ int GTBoard_ParseTile(GTBoard* b, char tok, int pos);
 int GTBoard_ParseTiles(GTBoard* b, char* s);
 
 int GTBoard_Parse(GTBoard* b, char* s);
+// print units
+int GTBoard_Print(const GTBoard* b, FILE* stream);
+// print tiles
+int GTBoard_PrintTiles(const GTBoard* b, FILE* stream);
 
-int GTBoard_Get(GTBoard* b, GTCharGetter cg);
-// print board to stdout
-int GTBoard_Print(const GTBoard* b);
+int GTBoard_PrintDemographics(const GTBoard* b, FILE* stream);
 
 #endif

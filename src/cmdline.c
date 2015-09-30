@@ -3,7 +3,7 @@
 #include "lexer.h"
 #include <string.h>
 
-static const char* cmd[] =
+static const char* cmd[GTCommandType_Size] =
 {
   "",
   "mv",
@@ -12,10 +12,11 @@ static const char* cmd[] =
   "st",
   "undo",
   "done",
-  "exit"
+  "exit",
+  "info"
 };
 
-static const char* dir[] =
+static const char* dir[GTDirection_Size] =
 {
   "",
   "n",
@@ -32,7 +33,7 @@ static const char* dir[] =
   "sw"
 };
 
-static const char* unit[] =
+static const char* unit[GTUnitType_Size] =
 {
   "",
   "g",
@@ -43,6 +44,11 @@ static const char* unit[] =
 };
 
 static const char whitespace[] = " \t\r\n";
+
+static const int isMetaCmd[GTCommandType_Size] =
+{
+  0, 0, 0, 0, 0, 1, 1, 1, 1
+};
 
 int GTCommand_Init(GTCommand* c)
 {
@@ -68,7 +74,7 @@ int GTCommand_ParsePos(GTCommand* c, const char* tok)
 int GTCommand_ParseCmd(GTCommand* c, const char* tok)
 {
   int i;
-  for (i = GTCommandType_Move; i <= GTCommandType_Stay; i++) {
+  for (i = GTCommandType_None; i < GTCommandType_Size; i++) {
     if (strcmp(cmd[i], tok) == 0) {
       c->cmd = i;
       return 0;
@@ -101,40 +107,28 @@ int GTCommand_ParseDir(GTCommand* c, const char* tok)
   return -1;
 }
 
-// to do: support undo
 int GTCommand_Parse(GTCommand* c, char* s)
 {
   c->err = GTCommandError_None;
+  char* tok;
   GTLexer l;
   GTLexer_Init(&l, s);
   GTLexer_Skip(&l, whitespace);
-  if (strcmp(cmd[GTCommandType_Exit], l.next) == 0) {
-    c->cmd = GTCommandType_Exit;
-    return 0;
-  }
-  if (strcmp(cmd[GTCommandType_Undo], l.next) == 0) {
-    c->cmd = GTCommandType_Undo;
-    return 0;
-  }
-  if (strcmp(cmd[GTCommandType_Done], l.next) == 0) {
-    c->cmd = GTCommandType_Done;
-    return 0;
-  }
-  GTLexer_Skip(&l, whitespace);
-  char* tok = GTLexer_GetToken(&l, whitespace);
-  check(GTCommand_ParsePos(c, tok) == 0, "error parsing pos");
+  tok = GTLexer_GetToken(&l, whitespace);
+  check(GTCommand_ParseCmd(c, tok) == 0, "error parsing command");
+  if (isMetaCmd[c->cmd]) { return 0; }
   GTLexer_Skip(&l, whitespace);
   tok = GTLexer_GetToken(&l, whitespace);
-  check(GTCommand_ParseCmd(c, tok) == 0, "error parsing cmd");
+  check(GTCommand_ParsePos(c, tok) == 0, "error parsing pos");
   if (c->cmd == GTCommandType_Stay) { return 0; }
+  GTLexer_Skip(&l, whitespace);
+  tok = GTLexer_GetToken(&l, whitespace);
+  check(GTCommand_ParseDir(c, tok) == 0, "error parsing dir");
   if (c->cmd == GTCommandType_Produce) {
     GTLexer_Skip(&l, whitespace);
     tok = GTLexer_GetToken(&l, whitespace);
     check(GTCommand_ParseUnit(c, tok) == 0, "error parsing unit");
   }
-  GTLexer_Skip(&l, whitespace);
-  tok = GTLexer_GetToken(&l, whitespace);
-  check(GTCommand_ParseDir(c, tok) == 0, "error parsing dir");
   return 0;
   error:
   c->err = GTCommandError_Parse;

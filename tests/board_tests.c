@@ -439,22 +439,26 @@ static char* Test_GTBoard_Parse()
   GTBoard_Init(&b);
   char file1[] = "look upon my work, ye mighty, and despair!";
   char file2[] =
-  "\nunits\t{\n"
-  "--,g1,--,A1,--,\n"
-  "--,--,--,--,f9,\n"
-  "C2,--,--,--,--,\n"
-  "g1,g1,g1,g1,G1,"
-  "s3,s3,s3,s3,S3,"
-  "--,--,--,--,--,\r\n\t}"
   "\ntiles {"
   "m, m, m, m, m,"
   "l, l, l, l, l,"
   "i, i, i, i, i,"
   "h, h, h, h, h,"
   "p, p, p, p, p,"
-  "w, w, w, w, w}";
+  "w, w, w, w, w,}"
+  "\nunits\t{\n"
+  "--,g1,--,A1,--,\n"
+  "--,--,--,--,f9,\n"
+  "C2,--,--,--,--,\n"
+  "g1,g1,g1,g1,G1,"
+  "s3,s3,s3,s3,S3,"
+  "--,--,--,--,--,\r\n\t}";
+  char file3[] = "options {}";
+  char file4[] = "options{}";
   mu_assert(GTBoard_Parse(&b, file1) == -1, "parsed bad string");
   mu_assert(GTBoard_Parse(&b, file2) == 0, "parse failed");
+  mu_assert(GTBoard_Parse(&b, file3) == 0, "parse failed");
+  mu_assert(GTBoard_Parse(&b, file4) == -1, "parsed bad string");
   return NULL;
 }
 

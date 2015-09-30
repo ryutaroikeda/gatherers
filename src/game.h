@@ -1,5 +1,5 @@
-#ifndef __game_h__
-#define __game_h__
+#ifndef _GTGAME_H_
+#define _GTGAME_H_
 
 #include "util.h"
 #include "types.h"
@@ -27,5 +27,7 @@ int GTGame_EndTurn(GTGame* g);
 int GTGame_PlayExplicit(GTGame* g, CommandGetter cg);
 
 int GTGame_Play(GTGame* g);
+
+int GTGame_PrintInfo(const GTGame* g, FILE* stream);
 
 #endif
