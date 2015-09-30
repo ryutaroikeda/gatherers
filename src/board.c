@@ -1,6 +1,7 @@
 #include "dbg.h"
 #include "board.h"
-#include "io.h"
+#include "lexer.h"
+#include <string.h>
 
 static const GTUnitType tileProduct[GTTileType_Size] =
 {
@@ -8,7 +9,7 @@ static const GTUnitType tileProduct[GTTileType_Size] =
   GTUnitType_None,
   GTUnitType_Archer,
   GTUnitType_Cavalry,
-  GTUnitType_Pikeman,
+  GTUnitType_Spearman,
   GTUnitType_Fortress,
   GTUnitType_None
 };
@@ -65,12 +66,24 @@ static const int distance[GTDirection_Size] =
   0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2
 };
 
-static const char unit[GTPlayer_Size][GTUnitType_Size] =
+static const char unitChar[GTPlayer_Size][GTUnitType_Size] =
 {
   { ' ', ' ', ' ', ' ', ' ', ' ' },
-  { ' ', 'g', 'a', 'c', 'p', 'f' },
-  { ' ', 'G', 'A', 'C', 'P', 'F' }
+  { ' ', 'g', 'a', 'c', 's', 'f' },
+  { ' ', 'G', 'A', 'C', 'S', 'F' }
 };
+
+static const char whitespace[] = " \n\r\t";
+
+static const char emptyUnit[] = "--";
+
+// static const char* tokens[] =
+// {
+//   "",
+//   "units",
+//   "tiles",
+//   "end"
+// };
 
 int GTBoard_Init(GTBoard* b)
 {
@@ -96,28 +109,6 @@ int GTBoard_Init(GTBoard* b)
     b->board[i * GTBoard_WidthMax] = GTBoard_Invalid;
     b->board[(i+1) * GTBoard_WidthMax - 1] = GTBoard_Invalid;
   }
-  return 0;
-}
-
-int GTBoard_Print(const GTBoard* b)
-{
-  fprintf(stdout, "\n  a  b  c  d  e\n");
-  int i, j;
-  for (i = GTBoard_Height - 1; i >= 0; i--) {
-    fprintf(stdout, "%d", i + 1);
-    for (j = 0; j < GTBoard_Width; j++) {
-      int pos = GTBoard_Pos(j, i);
-      int u = b->board[pos];
-      if (u == GTBoard_Empty) {
-        fprintf(stdout, " . ");
-      } else {
-        const GTUnit* v = &b->units[u];
-        fprintf(stdout, " %c%d", unit[v->color][v->type], v->life);
-      }
-    }
-    fprintf(stdout, "\n");
-  }
-  fprintf(stdout, "\n");
   return 0;
 }
 
@@ -260,7 +251,6 @@ int GTBoard_DeleteUnit(GTBoard* b, int unit)
     GTStack_PushAndSet(&b->stack, b->resources[u->color][t],
       b->resources[u->color][t] - 1);
   }
-  // todo: update population
   GTStack_PushAndSet(&b->stack, b->population[u->color][u->type],
     b->population[u->color][u->type] - 1);
   GTStack_PushAndSet(&b->stack, b->board[u->pos], GTBoard_Empty);
@@ -400,13 +390,83 @@ int GTBoard_EndTurn(GTBoard* b)
   return -1;
 }
 
+int GTBoard_ParseUnit(GTBoard* b, char* tok, int pos)
+{
+  char u = tok[0];
+  char l = tok[1];
+  GTPlayer p = GTPlayer_None;
+  if ('a' <= u && u <= 'z') {
+    p = GTPlayer_Black;
+  } else if ('A' <= u && u <= 'Z') {
+    p = GTPlayer_White;
+  } else {
+    sentinel("invalid unit token %c", u);
+  }
+  GTUnitType t = GTUnitType_None;
+  int i;
+  for (i = 0; i < GTUnitType_Size; i++) {
+    if (u != unitChar[p][i]) { continue; }
+    t = i;
+  }
+  check(t != GTUnitType_None, "unrecognized unit %c", u);
+  int life = l - '0';
+  check(life > 0, "life = %d too low", life);
+  check(GTBoard_CreateUnit(b, p, t, pos) == 0, "create unit failed");
+  b->units[b->board[pos]].life = life;
+  return 0;
+  error:
+  return -1;
+}
+
+int GTBoard_ParseUnits(GTBoard* b, char* s)
+{
+  int file, rank;
+  GTLexer l;
+  GTLexer_Init(&l, s);
+  for (file = GTBoard_Height - 1; file >= 0; file--) {
+    for(rank = 0; rank < GTBoard_Width; rank++) {
+      GTLexer_Skip(&l, whitespace);
+      char* tok = GTLexer_GetToken(&l, ",");
+      check(strlen(tok) == 2, "unexpected token %.*s", 80, tok);
+      if (strcmp(tok, emptyUnit) == 0) { continue; }
+      int pos = GTBoard_Pos(rank, file);
+      check(GTBoard_ParseUnit(b, tok, pos) == 0, "corrupt unit");
+    }
+  }
+  return 0;
+  error:
+  return -1;
+}
+
 // int GTBoard_Parse(GTBoard* b, char* s)
 // {
 //   int i, j;
-  
+
 // }
 
 // int GTBoard_Get(GTBoard* b, GTCharGetter cg)
 // {
 //   return 0;
 // }
+
+int GTBoard_Print(const GTBoard* b)
+{
+  fprintf(stdout, "\n  a  b  c  d  e\n");
+  int rank, file;
+  for (file = GTBoard_Height - 1; file >= 0; file--) {
+    fprintf(stdout, "%d", file + 1);
+    for (rank = 0; rank < GTBoard_Width; rank++) {
+      int pos = GTBoard_Pos(rank, file);
+      if (GTBoard_IsEmpty(b, pos)) {
+        fprintf(stdout, " . ");
+      } else {
+        const GTUnit* u = &b->units[b->board[pos]];
+        fprintf(stdout, " %c%d", unitChar[u->color][u->type], u->life);
+      }
+    }
+    fprintf(stdout, "\n");
+  }
+  fprintf(stdout, "\n");
+  return 0;
+}
+

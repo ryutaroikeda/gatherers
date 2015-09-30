@@ -123,10 +123,10 @@ static char* Test_GTBoard_CanProduceUnit()
   mu_assert(!GTBoard_CanProduceUnit(&b, 0, GTUnitType_Gatherer,
    GTDirection_East), "can produce with no movement");
   GTBoard_ResetUnitMovement(&b, 0);
-  mu_assert(!GTBoard_CanProduceUnit(&b, 0, GTUnitType_Pikeman, 
+  mu_assert(!GTBoard_CanProduceUnit(&b, 0, GTUnitType_Spearman, 
    GTDirection_North), "can produce on invalid");
-  mu_assert(GTBoard_CanProduceUnit(&b, 0, GTUnitType_Pikeman,
-   GTDirection_East), "cannot produce pikeman");
+  mu_assert(GTBoard_CanProduceUnit(&b, 0, GTUnitType_Spearman,
+   GTDirection_East), "cannot produce spearman");
   mu_assert(!GTBoard_CanProduceUnit(&b, 0, GTUnitType_Archer, 
    GTDirection_East), "can produce archer");
   mu_assert(GTBoard_CanProduceUnit(&b, 0, GTUnitType_Gatherer,
@@ -344,6 +344,51 @@ static char* Test_GTBoard_EndTurn()
   return NULL;
 }
 
+static char* Test_GTBoard_ParseUnit()
+{
+  GTBoard b;
+  GTBoard_Init(&b);
+  mu_assert(GTBoard_ParseUnit(&b, "W5", GTBoard_ValidMin) == -1,
+    "parsed invalid token");
+  mu_assert(GTBoard_ParseUnit(&b, "g1", GTBoard_ValidMin) == 0,
+   "parse failed");
+  mu_assert(GTBoard_IsUnit(&b, GTBoard_ValidMin), "no unit created");
+  GTUnit* u = &b.units[b.board[GTBoard_ValidMin]];
+  mu_assert(u->color == GTPlayer_Black, ".color wrong");
+  mu_assert(u->type == GTUnitType_Gatherer, ".type wrong");
+  mu_assert(u->life == 1, ".life wrong");
+  return NULL;
+}
+
+static char* Test_GTBoard_ParseUnits()
+{
+  GTBoard b;
+  GTBoard_Init(&b);
+  char units1[] = "rubbish rubbish rubbish";
+  char units2[] =
+  "g1,a1,c2,s3,f4,"
+  "G1,A1,C2,S3,F4,"
+  "--,--,--,--,--,"
+  " \r \n\t --,g4,S9,aa,fk,"
+  "--,--,--,--,--,"
+  "--,--,--,--,--,";
+  mu_assert(GTBoard_ParseUnits(&b, units1) == -1, "parsed bad string");
+  mu_assert(GTBoard_ParseUnits(&b, units2) == 0, "parse failed");
+  mu_assert(b.population[GTPlayer_Black][GTUnitType_Gatherer] == 2,
+    ".population gatherer wrong");
+  mu_assert(b.population[GTPlayer_Black][GTUnitType_Archer] == 2,
+    ".population archer wrong");
+  mu_assert(b.population[GTPlayer_Black][GTUnitType_Cavalry] == 1,
+    ".population cavalry wrong");
+  mu_assert(b.population[GTPlayer_Black][GTUnitType_Spearman] == 1,
+    ".population spearman wrong");
+  mu_assert(b.population[GTPlayer_Black][GTUnitType_Fortress] == 2,
+    ".population fortress wrong");
+  mu_assert(b.population[GTPlayer_White][GTUnitType_Spearman] == 2,
+    ".population Spearman wrong");
+  return NULL;
+}
+
 static char* Test_All()
 {
   mu_suite_start();
@@ -367,6 +412,8 @@ static char* Test_All()
   mu_run_test(Test_GTBoard_ProduceUnit);
   mu_run_test(Test_GTBoard_UndoPlay);
   mu_run_test(Test_GTBoard_EndTurn);
+  mu_run_test(Test_GTBoard_ParseUnit);
+  mu_run_test(Test_GTBoard_ParseUnits);
   return NULL;
 }
 

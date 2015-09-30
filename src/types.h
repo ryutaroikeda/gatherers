@@ -38,7 +38,7 @@ enum GTUnitType
   GTUnitType_Gatherer,
   GTUnitType_Archer,
   GTUnitType_Cavalry,
-  GTUnitType_Pikeman,
+  GTUnitType_Spearman,
   GTUnitType_Fortress,
   GTUnitType_Size
 };

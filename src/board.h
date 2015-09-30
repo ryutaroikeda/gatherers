@@ -3,6 +3,7 @@
 #include "util.h"
 #include "types.h"
 #include "stack.h"
+#include "io.h"
 
 //
 // Unless otherwise stated, the functions below return 0 on success and a
@@ -30,6 +31,16 @@ enum GTBoardError
   GTBoardError_Size
 };
 enum_type(GTBoardError);
+
+enum GTBoardFileToken
+{
+  GTBoardFileToken_None,
+  GTBoardFileToken_Units,
+  GTBoardFileToken_Tiles,
+  GTBoardFileToken_End,
+  GTBoardFileToken_Size
+};
+enum_type(GTBoardFileToken);
 
 enum
 {
@@ -80,8 +91,6 @@ struct_type(GTBoard);
 (GTBoard_ValidMin + (rank) + ((GTBoard_Height - 1 - (file)) * GTBoard_WidthMax))
 
 int GTBoard_Init(GTBoard* b);
-
-int GTBoard_Print(const GTBoard* b);
 // return 1 if the boards are equal, except for err, stack, and entries
 int GTBoard_IsEqual(GTBoard b, GTBoard c);
 // return 1 if .board[pos] is valid
@@ -121,13 +130,17 @@ int GTBoard_Range(GTBoard* b, int unit, GTDirection d);
 int GTBoard_UndoPlay(GTBoard* b);
 
 int GTBoard_EndTurn(GTBoard* b);
+// parse tok and create unit at pos
+int GTBoard_ParseUnit(GTBoard* b, char* tok, int pos);
+// parse comma separated unit tokens
+int GTBoard_ParseUnits(GTBoard* b, char* s);
 
-// int GTBoard_ParseUnits(GTBoard* b, char* s);
+int GTBoard_Parse_Tiles(GTBoard* b, char* s);
 
-// int GTBoard_Parse_Tiles(GTBoard* b, char* s);
-
-// int GTBoard_Parse(GTBoard* b, char* s);
+int GTBoard_Parse(GTBoard* b, char* s);
 
 int GTBoard_Get(GTBoard* b, GTCharGetter cg);
+// print board to stdout
+int GTBoard_Print(const GTBoard* b);
 
 #endif

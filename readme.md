@@ -17,5 +17,4 @@ A boardgame for two players.
 * user manual
 
 ### Optional
-* history and file export
 * GUI

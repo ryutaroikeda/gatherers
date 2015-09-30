@@ -38,7 +38,7 @@ static const char* unit[] =
   "g",
   "a",
   "c",
-  "p",
+  "s",
   "f"
 };
 

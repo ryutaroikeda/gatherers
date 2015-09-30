@@ -68,13 +68,13 @@ static char* Test_GTCommand_Parse()
   char t[] = "  \n \r    exit";
   mu_assert(GTCommand_Parse(&c, t) == 0, "parse failed");
   mu_assert(c.cmd == GTCommandType_Exit, ".cmd wrong");
-  char u[] = " \ra1   pd\r p\n ee";
+  char u[] = " \ra1   pd\r s\n ee";
   mu_assert(GTCommand_Parse(&c, u) == 0, "parse failed");
   mu_assert(c.rank == 0, ".rank wrong");
   mu_assert(c.file == 0, ".file wrong");
   mu_assert(c.cmd == GTCommandType_Produce, ".cmd wrong");
   mu_assert(c.d == GTDirection_EastEast, ".d wrong");
-  mu_assert(c.t == GTUnitType_Pikeman, ".t wrong");
+  mu_assert(c.t == GTUnitType_Spearman, ".t wrong");
   char v[] = "do  ne e2 mv ";
   mu_assert(GTCommand_Parse(&c, v) == -1, "parsed bad string");
   return NULL;

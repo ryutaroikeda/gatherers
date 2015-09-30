@@ -1,5 +1,5 @@
-#ifndef _lexer_h_
-#define _lexer_h_
+#ifndef _GTLEXER_H_
+#define _GTLEXER_H_
 
 #include "util.h"
 
