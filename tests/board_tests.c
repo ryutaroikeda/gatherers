@@ -389,6 +389,50 @@ static char* Test_GTBoard_ParseUnits()
   return NULL;
 }
 
+static char* Test_GTBoard_ParseTile()
+{
+  GTBoard b;
+  GTBoard_Init(&b);
+  char tok1 = 'y';
+  char tok2 = 'w';
+  mu_assert(GTBoard_ParseTile(&b, tok1, GTBoard_ValidMin) == -1,
+   "parsed bad token");
+  mu_assert(GTBoard_ParseTile(&b, tok2, GTBoard_ValidMin) == 0,
+    "parse failed");
+  mu_assert(b.tiles[GTBoard_ValidMin].type == GTTileType_Wood, ".type wrong");
+  mu_assert(b.tiles[GTBoard_ValidMin].isRevealed == 0, ".isRevealed wrong");
+  return NULL;
+}
+
+static char* Test_GTBoard_ParseTiles()
+{
+  GTBoard b;
+  GTBoard_Init(&b);
+  char tiles1[] = "h,e,ll o world";
+  char tiles2[] =
+  "m, m, m, m, m,"
+  "l, l, l, l, l,"
+  "i, i, i, i, i,"
+  "h, h, h, h, h,"
+  "p, p, p, p, p,"
+  "w, w, w, w, w";
+  mu_assert(GTBoard_ParseTiles(&b, tiles1) == -1, "parsed bad string");
+  mu_assert(GTBoard_ParseTiles(&b, tiles2) == 0, "parse failed");
+  int pos = GTBoard_ValidMin;
+  mu_assert(b.tiles[pos].type == GTTileType_Mountain, ".tiles wrong");
+  pos = GTDirection_Pos(pos, GTDirection_SouthEast);
+  mu_assert(b.tiles[pos].type == GTTileType_Lake, ".tiles wrong");
+  pos = GTDirection_Pos(pos, GTDirection_SouthEast);
+  mu_assert(b.tiles[pos].type == GTTileType_Iron, ".tiles wrong");
+  pos = GTDirection_Pos(pos, GTDirection_SouthEast);
+  mu_assert(b.tiles[pos].type == GTTileType_Horse, ".tiles wrong");
+  pos = GTDirection_Pos(pos, GTDirection_SouthEast);
+  mu_assert(b.tiles[pos].type == GTTileType_Plains, ".tiles wrong");
+  pos = GTDirection_Pos(pos, GTDirection_South);
+  mu_assert(b.tiles[pos].type == GTTileType_Wood, ".tiles wrong");
+  return NULL;
+}
+
 static char* Test_All()
 {
   mu_suite_start();
@@ -414,6 +458,8 @@ static char* Test_All()
   mu_run_test(Test_GTBoard_EndTurn);
   mu_run_test(Test_GTBoard_ParseUnit);
   mu_run_test(Test_GTBoard_ParseUnits);
+  mu_run_test(Test_GTBoard_ParseTile);
+  mu_run_test(Test_GTBoard_ParseTiles);
   return NULL;
 }
 

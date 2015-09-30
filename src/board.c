@@ -77,6 +77,12 @@ static const char whitespace[] = " \n\r\t";
 
 static const char emptyUnit[] = "--";
 
+static const char tileChar[2][GTTileType_Size] =
+{
+  { ' ', 'p', 'w', 'h', 'i', 'l', 'm' },
+  { ' ', 'P', 'W', 'H', 'I', 'L', 'M' }
+};
+
 // static const char* tokens[] =
 // {
 //   "",
@@ -431,6 +437,43 @@ int GTBoard_ParseUnits(GTBoard* b, char* s)
       if (strcmp(tok, emptyUnit) == 0) { continue; }
       int pos = GTBoard_Pos(rank, file);
       check(GTBoard_ParseUnit(b, tok, pos) == 0, "corrupt unit");
+    }
+  }
+  return 0;
+  error:
+  return -1;
+}
+
+int GTBoard_ParseTile(GTBoard* b, char tok, int pos)
+{
+  int isRevealed;
+  int i;
+  if ('a' <= tok && tok <= 'z') {
+    isRevealed = 0;
+  } else {
+    isRevealed = 1;
+  }
+  for (i = 0; i < GTTileType_Size; i++) {
+    if (tok != tileChar[isRevealed][i]) { continue; }
+    b->tiles[pos].type = i;
+    b->tiles[pos].isRevealed = isRevealed;
+    return 0;
+  }
+  return -1;
+}
+
+int GTBoard_ParseTiles(GTBoard* b, char* s)
+{
+  int file, rank;
+  GTLexer l;
+  GTLexer_Init(&l, s);
+  for (file = GTBoard_Height -1; file >= 0; file--) {
+    for (rank = 0; rank < GTBoard_Width; rank++) {
+      GTLexer_Skip(&l, whitespace);
+      char* tok = GTLexer_GetToken(&l, ",");
+      check(strlen(tok) == 1, "unexpected token %.*s", 80, tok);
+      int pos = GTBoard_Pos(rank, file);
+      check(GTBoard_ParseTile(b, tok[0], pos) == 0, "corrupt tile");
     }
   }
   return 0;

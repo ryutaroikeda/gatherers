@@ -135,7 +135,9 @@ int GTBoard_ParseUnit(GTBoard* b, char* tok, int pos);
 // parse comma separated unit tokens
 int GTBoard_ParseUnits(GTBoard* b, char* s);
 
-int GTBoard_Parse_Tiles(GTBoard* b, char* s);
+int GTBoard_ParseTile(GTBoard* b, char tok, int pos);
+
+int GTBoard_ParseTiles(GTBoard* b, char* s);
 
 int GTBoard_Parse(GTBoard* b, char* s);
 
