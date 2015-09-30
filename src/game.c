@@ -36,6 +36,10 @@ int GTGame_DoCommand(GTGame* g, GTCommand* c)
     GTGame_EndTurn(g);
     return 0;
   }
+  if (c->cmd == GTCommandType_Undo) {
+    check_debug(GTBoard_UndoPlay(g->b) == 0, "cannot undo");
+    return 0;
+  }
   int pos = GTBoard_Pos(c->rank, c->file);
   check_debug(GTBoard_IsValid(g->b, pos), "invalid pos");
   int unit = g->b->board[pos];

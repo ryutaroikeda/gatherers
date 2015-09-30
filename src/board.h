@@ -1,5 +1,5 @@
-#ifndef __board_h__
-#define __board_h__
+#ifndef _GTBOARD_H_
+#define _GTBOARD_H_
 #include "util.h"
 #include "types.h"
 #include "stack.h"
@@ -121,5 +121,13 @@ int GTBoard_Range(GTBoard* b, int unit, GTDirection d);
 int GTBoard_UndoPlay(GTBoard* b);
 
 int GTBoard_EndTurn(GTBoard* b);
+
+// int GTBoard_ParseUnits(GTBoard* b, char* s);
+
+// int GTBoard_Parse_Tiles(GTBoard* b, char* s);
+
+// int GTBoard_Parse(GTBoard* b, char* s);
+
+int GTBoard_Get(GTBoard* b, GTCharGetter cg);
 
 #endif

@@ -1,5 +1,6 @@
 #include "dbg.h"
 #include "board.h"
+#include "io.h"
 
 static const GTUnitType tileProduct[GTTileType_Size] =
 {
@@ -100,7 +101,7 @@ int GTBoard_Init(GTBoard* b)
 
 int GTBoard_Print(const GTBoard* b)
 {
-  fprintf(stdout, "\n  a b c d e\n");
+  fprintf(stdout, "\n  a  b  c  d  e\n");
   int i, j;
   for (i = GTBoard_Height - 1; i >= 0; i--) {
     fprintf(stdout, "%d", i + 1);
@@ -108,11 +109,10 @@ int GTBoard_Print(const GTBoard* b)
       int pos = GTBoard_Pos(j, i);
       int u = b->board[pos];
       if (u == GTBoard_Empty) {
-        fprintf(stdout, " .");
+        fprintf(stdout, " . ");
       } else {
-        int type = b->units[u].type;
-        int color = b->units[u].color;
-        fprintf(stdout, " %c", unit[color][type]);
+        const GTUnit* v = &b->units[u];
+        fprintf(stdout, " %c%d", unit[v->color][v->type], v->life);
       }
     }
     fprintf(stdout, "\n");
@@ -400,3 +400,13 @@ int GTBoard_EndTurn(GTBoard* b)
   return -1;
 }
 
+// int GTBoard_Parse(GTBoard* b, char* s)
+// {
+//   int i, j;
+  
+// }
+
+// int GTBoard_Get(GTBoard* b, GTCharGetter cg)
+// {
+//   return 0;
+// }

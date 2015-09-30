@@ -1,5 +1,5 @@
-#ifndef __io_h__
-#define __io_h__
+#ifndef _GTIO_H_
+#define _GTIO_H_
 
 typedef char (*GTCharGetter)(void);
 

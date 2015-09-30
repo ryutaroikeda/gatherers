@@ -11,7 +11,7 @@ static const char* cmd[] =
   "pd",
   "st",
   "undo",
-  "dn",
+  "done",
   "exit"
 };
 
@@ -110,6 +110,10 @@ int GTCommand_Parse(GTCommand* c, char* s)
   GTLexer_Skip(&l, whitespace);
   if (strcmp(cmd[GTCommandType_Exit], l.next) == 0) {
     c->cmd = GTCommandType_Exit;
+    return 0;
+  }
+  if (strcmp(cmd[GTCommandType_Undo], l.next) == 0) {
+    c->cmd = GTCommandType_Undo;
     return 0;
   }
   if (strcmp(cmd[GTCommandType_Done], l.next) == 0) {

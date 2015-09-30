@@ -3,18 +3,22 @@
 #include "cmdline.h"
 #include "game.h"
 
-static char input1[] = "dn\nc1 mv n\ndn\nc6 mv s\ndn\nc2 pd g n\nexit";
-
-static char Test_CharGetter1(void)
-{
-  static char* ptr = input1;
-  return *(ptr++);
+#define Test_CharGet(i) \
+static char Test_CharGet ## i(void) \
+{                                   \
+  static char* ptr = input ## i;    \
+  return *(ptr++);                  \
 }
 
-static int Test_GetCommand1(GTCommand* c)
-{
-  return GTCommand_Get(c, &Test_CharGetter1);
+#define Test_GetCommand(i)                     \
+Test_CharGet(i)                                \
+static int Test_GetCommand ## i (GTCommand* c) \
+{                                              \
+  return GTCommand_Get(c, &Test_CharGet ## i); \
 }
+
+static char input1[] = "done\nc1 mv n\ndone\nc6 mv s\ndone\nc2 pd g n\nexit";
+Test_GetCommand(1)
 
 static char* Test_1()
 {
@@ -34,6 +38,15 @@ static char* Test_1()
     ".pos wrong");
   return NULL;
 }
+
+// static char input2[] = "";
+// Test_GetCommand(2)
+
+// static char* Test_2()
+// {
+
+//   return NULL;
+// }
 
 static char* Test_All()
 {
