@@ -83,13 +83,13 @@ static const char tileChar[2][GTTileType_Size] =
   { ' ', 'P', 'W', 'H', 'I', 'L', 'M' }
 };
 
-// static const char* tokens[] =
-// {
-//   "",
-//   "units",
-//   "tiles",
-//   "end"
-// };
+static const char* fileTokens[] =
+{
+  "",
+  "units",
+  "tiles",
+  "end"
+};
 
 int GTBoard_Init(GTBoard* b)
 {
@@ -481,11 +481,28 @@ int GTBoard_ParseTiles(GTBoard* b, char* s)
   return -1;
 }
 
-// int GTBoard_Parse(GTBoard* b, char* s)
-// {
-//   int i, j;
-
-// }
+int GTBoard_Parse(GTBoard* b, char* s)
+{
+  char* tok;
+  GTLexer l;
+  GTLexer_Init(&l, s);
+  GTLexer_Skip(&l, whitespace);
+  while ((tok = GTLexer_GetToken(&l, whitespace)) != NULL) {
+    GTLexer_GetToken(&l, "{");
+    char* s = GTLexer_GetToken(&l, "}");
+    if (strcmp(tok, fileTokens[GTBoardFileToken_Units]) == 0) {
+      check(GTBoard_ParseUnits(b, s) == 0, "parsing units failed");
+    } else if (strcmp(tok, fileTokens[GTBoardFileToken_Tiles]) == 0) {
+      check(GTBoard_ParseTiles(b, s) == 0, "parsing tiles failed");
+    } else {
+      sentinel("unidentified token %.*s", 80, tok);
+    }
+    GTLexer_Skip(&l, whitespace);
+  }
+  return 0;
+  error:
+  return -1;
+}
 
 // int GTBoard_Get(GTBoard* b, GTCharGetter cg)
 // {

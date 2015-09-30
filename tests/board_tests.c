@@ -364,7 +364,7 @@ static char* Test_GTBoard_ParseUnits()
 {
   GTBoard b;
   GTBoard_Init(&b);
-  char units1[] = "rubbish rubbish rubbish";
+  char units1[] = "we can fly if only we can believe it a dream";
   char units2[] =
   "g1,a1,c2,s3,f4,"
   "G1,A1,C2,S3,F4,"
@@ -408,7 +408,7 @@ static char* Test_GTBoard_ParseTiles()
 {
   GTBoard b;
   GTBoard_Init(&b);
-  char tiles1[] = "h,e,ll o world";
+  char tiles1[] = "they will say: how his hair is growing thin!";
   char tiles2[] =
   "m, m, m, m, m,"
   "l, l, l, l, l,"
@@ -430,6 +430,31 @@ static char* Test_GTBoard_ParseTiles()
   mu_assert(b.tiles[pos].type == GTTileType_Plains, ".tiles wrong");
   pos = GTDirection_Pos(pos, GTDirection_South);
   mu_assert(b.tiles[pos].type == GTTileType_Wood, ".tiles wrong");
+  return NULL;
+}
+
+static char* Test_GTBoard_Parse()
+{
+  GTBoard b;
+  GTBoard_Init(&b);
+  char file1[] = "look upon my work, ye mighty, and despair!";
+  char file2[] =
+  "\nunits\t{\n"
+  "--,g1,--,A1,--,\n"
+  "--,--,--,--,f9,\n"
+  "C2,--,--,--,--,\n"
+  "g1,g1,g1,g1,G1,"
+  "s3,s3,s3,s3,S3,"
+  "--,--,--,--,--,\r\n\t}"
+  "\ntiles {"
+  "m, m, m, m, m,"
+  "l, l, l, l, l,"
+  "i, i, i, i, i,"
+  "h, h, h, h, h,"
+  "p, p, p, p, p,"
+  "w, w, w, w, w}";
+  mu_assert(GTBoard_Parse(&b, file1) == -1, "parsed bad string");
+  mu_assert(GTBoard_Parse(&b, file2) == 0, "parse failed");
   return NULL;
 }
 
@@ -460,6 +485,7 @@ static char* Test_All()
   mu_run_test(Test_GTBoard_ParseUnits);
   mu_run_test(Test_GTBoard_ParseTile);
   mu_run_test(Test_GTBoard_ParseTiles);
+  mu_run_test(Test_GTBoard_Parse);
   return NULL;
 }
 

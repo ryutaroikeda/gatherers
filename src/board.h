@@ -37,7 +37,6 @@ enum GTBoardFileToken
   GTBoardFileToken_None,
   GTBoardFileToken_Units,
   GTBoardFileToken_Tiles,
-  GTBoardFileToken_End,
   GTBoardFileToken_Size
 };
 enum_type(GTBoardFileToken);
@@ -134,9 +133,9 @@ int GTBoard_EndTurn(GTBoard* b);
 int GTBoard_ParseUnit(GTBoard* b, char* tok, int pos);
 // parse comma separated unit tokens
 int GTBoard_ParseUnits(GTBoard* b, char* s);
-
+// parse comma separated tile token at pos
 int GTBoard_ParseTile(GTBoard* b, char tok, int pos);
-
+// parse comma separated tile tokens
 int GTBoard_ParseTiles(GTBoard* b, char* s);
 
 int GTBoard_Parse(GTBoard* b, char* s);

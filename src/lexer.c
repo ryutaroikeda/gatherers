@@ -12,6 +12,7 @@ char* GTLexer_GetToken(GTLexer* l, const char* delimiters)
 {
   char* tok = l->next;
   char c;
+  check_debug(*l->next != '\0', "end of string");
   while ((c = *l->next)) {
     l->next++;
     if (strchr(delimiters, c)) {
@@ -20,6 +21,8 @@ char* GTLexer_GetToken(GTLexer* l, const char* delimiters)
     }
   }
   return tok;
+  error:
+  return NULL;
 }
 
 int GTLexer_Skip(GTLexer* l, const char* skip)
