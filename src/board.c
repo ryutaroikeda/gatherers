@@ -154,6 +154,16 @@ int GTBoard_IsValidUnit(const GTBoard* b, int unit)
    b->board[b->units[unit].pos] == unit);
 }
 
+int GTBoard_IsRanged(const GTBoard* b, int unit)
+{
+  return unitRange[b->units[unit].type] > 0;
+}
+
+int GTBoard_IsProducer(const GTBoard* b, int unit)
+{
+  return unitCanProduce[b->units[unit].type];
+}
+
 int GTBoard_CanMoveUnit(const GTBoard* b, int unit, GTDirection d)
 {
   if (!GTBoard_IsValidUnit(b, unit)) { return 0; }
@@ -204,6 +214,11 @@ int GTBoard_CanRange(const GTBoard* b, int unit, GTDirection d)
   const GTUnit* v = &b->units[b->board[pos]];
   if (u->color == v->color) { return 0; }
   return 1;
+}
+
+int GTBoard_CanStay(const GTBoard* b, int unit)
+{
+  return b->units[unit].movement > 0;
 }
 
 int GTBoard_RevealTile(GTBoard* b, int pos)
@@ -349,11 +364,25 @@ int GTBoard_Range(GTBoard* b, int unit, GTDirection d)
     GTDirection e = d - 4;
     int p = GTDirection_Pos(u->pos, e);
     GTBoard_RevealTile(b, p);
-    check_debug(b->tiles[p].type != GTTileType_Mountain, "found mountain");
+    if (b->tiles[p].type == GTTileType_Mountain) {
+      log_info("mountain found, ranged attack failed");
+      return 0;
+    }
   }
   int pos = GTDirection_Pos(u->pos, d);
   int target = b->board[pos];
   GTBoard_DamageUnit(b, target, 1);
+  return 0;
+  error:
+  return -1;
+}
+
+int GTBoard_Stay(GTBoard* b, int unit)
+{
+  check(GTBoard_IsValidUnit(b, unit), "invalid unit");
+  GTStack_BeginPlay(&b->stack);
+  GTUnit* u = &b->units[unit];
+  GTStack_PushAndSet(&b->stack, u->movement, 0);
   return 0;
   error:
   return -1;

@@ -1,6 +1,7 @@
 #include "dbg.h"
 #include "game.h"
 #include "board.h"
+#include "ai.h"
 
 int main(int argc, char* argv[])
 {
@@ -25,6 +26,17 @@ int main(int argc, char* argv[])
   GTBoard_Parse(&b, file);
   GTGame g;
   GTGame_Init(&g, &b);
+  GTCommand c;
+  c.cmd = GTCommandType_SetBoard;
+  c.b = &b;
+  check(GTAI_Random(&c) == 2, "board set failed");
+  c.cmd = GTCommandType_SetPlayer;
+  c.rank = (int) GTPlayer_Black;
+  check(GTAI_Random(&c) == 1, "player set failed");
+  g.interface[GTPlayer_Black] = &GTAI_Random;
+  g.interface[GTPlayer_White] = &GTCommand_GetStdin;
   GTGame_Play(&g);
   return 0;
+  error:
+  return -1;
 }

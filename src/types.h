@@ -1,5 +1,5 @@
-#ifndef __types_h__
-#define __types_h__
+#ifndef _GTTYPES_H_
+#define _GTTYPES_H_
 
 #include "util.h"
 

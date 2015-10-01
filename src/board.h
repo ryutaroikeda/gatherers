@@ -103,13 +103,18 @@ int GTBoard_IsUnit(const GTBoard* b, int pos);
 int GTBoard_IsRevealed(const GTBoard* b, int pos);
 // return 1 if unit is in .board at the correct pos
 int GTBoard_IsValidUnit(const GTBoard* b, int unit);
+// return 1 if unit is a ranged unit
+int GTBoard_IsRanged(const GTBoard* b, int unit);
+// return 1 if unit is a producer
+int GTBoard_IsProducer(const GTBoard* b, int unit);
 // return 1 if unit can move d or attack d
 int GTBoard_CanMoveUnit(const GTBoard* b, int unit, GTDirection d);
-
 int
 GTBoard_CanProduceUnit(const GTBoard* b, int unit, GTUnitType t, GTDirection d);
 // return 1 if unit can perform a ranged attack on d
 int GTBoard_CanRange(const GTBoard* b, int unit, GTDirection d);
+
+int GTBoard_CanStay(const GTBoard* b, int unit);
 
 int GTBoard_RevealTile(GTBoard* b, int pos);
 
@@ -126,6 +131,8 @@ int GTBoard_MoveUnit(GTBoard* b, int unit, GTDirection d);
 int GTBoard_ProduceUnit(GTBoard* b, int unit, GTUnitType t, GTDirection d);
 
 int GTBoard_Range(GTBoard* b, int unit, GTDirection d);
+
+int GTBoard_Stay(GTBoard* b, int unit);
 
 int GTBoard_UndoPlay(GTBoard* b);
 

@@ -7,6 +7,7 @@ int GTGame_Init(GTGame* g, GTBoard* b)
 {
   g->b = b;
   g->p = GTPlayer_Black;
+  memset(g->interface, 0, sizeof(GTCommandGetter) * GTPlayer_Size);
   check(g->b->err == GTBoardError_None, "board error");
   return 0;
   error:
@@ -31,16 +32,13 @@ int GTGame_DoCommand(GTGame* g, GTCommand* c)
   if (c->cmd == GTCommandType_Exit) {
     c->err = GTCommandError_Exit;
     return -1;
-  }
-  if (c->cmd == GTCommandType_Done) { 
+  } else if (c->cmd == GTCommandType_Done) { 
     GTGame_EndTurn(g);
     return 0;
-  }
-  if (c->cmd == GTCommandType_Undo) {
+  } else if (c->cmd == GTCommandType_Undo) {
     check_debug(GTBoard_UndoPlay(g->b) == 0, "cannot undo");
     return 0;
-  }
-  if (c->cmd == GTCommandType_Info) {
+  } else if (c->cmd == GTCommandType_Info) {
     GTGame_PrintInfo(g, stdout);
     return 0;
   }
@@ -60,6 +58,9 @@ int GTGame_DoCommand(GTGame* g, GTCommand* c)
   } else if (c->cmd == GTCommandType_Produce) {
     log_info("producing with %d", unit);
     err = GTBoard_ProduceUnit(g->b, unit, c->t, c->d);
+  } else if (c->cmd == GTCommandType_Stay) {
+    log_info("unit %d stays", unit);
+    err = GTBoard_Stay(g->b, unit);
   }
   check_debug(err == 0, "error with command");
   return 0;
@@ -81,15 +82,24 @@ int GTGame_EndTurn(GTGame* g)
   return -1;
 }
 
-int GTGame_PlayExplicit(GTGame* g, CommandGetter cg)
+int GTGame_GetCommand(GTGame* g, GTCommand* c)
+{
+  check((*g->interface[g->p])(c) == 0, "error getting command");
+  return 0;
+  error:
+  return -1;
+}
+
+int GTGame_Play(GTGame* g)
 {
   // end turn zero to reset unit movement
   GTBoard_EndTurn(g->b);
   while (1) {
     GTCommand c;
+    GTCommand_Init(&c);
     GTBoard_Print(g->b, stdout);
     fprintf(stdout, "player %d: ", g->p);
-    if ((*cg)(&c) == -1) {
+    if (GTGame_GetCommand(g, &c) == -1) {
       fprintf(stdout, "bad command, try again\n");
       continue;
     }
@@ -108,9 +118,11 @@ int GTGame_PlayExplicit(GTGame* g, CommandGetter cg)
   return 0;
 }
 
-int GTGame_Play(GTGame* g)
+int GTGame_PlayStdin(GTGame* g)
 {
-  return GTGame_PlayExplicit(g, &GTCommand_GetStdin);
+  g->interface[GTPlayer_Black] = &GTCommand_GetStdin;
+  g->interface[GTPlayer_White] = &GTCommand_GetStdin;
+  return GTGame_Play(g);
 }
 
 int GTGame_PrintInfo(const GTGame* g, FILE* stream) 

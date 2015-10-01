@@ -1,5 +1,5 @@
-#ifndef __stack_h__
-#define __stack_h__
+#ifndef _GTSTACK_H_
+#define _GTSTACK_H_
 
 #include "util.h"
 

@@ -30,7 +30,10 @@ enum GTCommandType
   GTCommandType_Done,
   GTCommandType_Exit,
   GTCommandType_Info,
-  GTCommandType_Size
+  GTCommandType_Size,
+  // special commands for interfaces
+  GTCommandType_SetPlayer,
+  GTCommandType_SetBoard
 };
 enum_type(GTCommandType);
 
@@ -51,6 +54,7 @@ struct GTCommand
   GTCommandType cmd;
   GTDirection d;
   GTUnitType t;
+  struct GTBoard* b;
   GTCommandError err;
 };
 struct_type(GTCommand);

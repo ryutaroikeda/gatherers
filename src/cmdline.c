@@ -57,6 +57,8 @@ int GTCommand_Init(GTCommand* c)
   c->cmd = GTCommandType_None;
   c->d = GTDirection_None;
   c->t = GTUnitType_None;
+  c->b = NULL;
+  c->err = GTCommandError_None;
   return 0;
 }
 
@@ -137,6 +139,7 @@ int GTCommand_Parse(GTCommand* c, char* s)
 
 int GTCommand_Get(GTCommand* c, GTCharGetter g)
 {
+  GTCommand_Init(c);
   char buf[256];
   if (GTGetLineExplicit(g, buf, 256) == -1) {
     log_warn("something wrong with GetLine");

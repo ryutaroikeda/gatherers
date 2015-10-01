@@ -78,6 +78,17 @@ static char* Test_GTBoard_IsValidUnit()
   return NULL;
 }
 
+static char* Test_GTBoard_IsRanged()
+{
+  GTBoard b;
+  GTBoard_Init(&b);
+  GTBoard_CreateUnit(&b, GTPlayer_None, GTUnitType_Gatherer, GTBoard_ValidMin);
+  mu_assert(!GTBoard_IsRanged(&b, 0), "unit not ranged");
+  b.units[0].type = GTUnitType_Archer;
+  mu_assert(GTBoard_IsRanged(&b, 0), "unit ranged");
+  return NULL;
+}
+
 static char* Test_GTBoard_CanMoveUnit()
 {
   GTBoard b;
@@ -152,6 +163,17 @@ static char* Test_GTBoard_CanRange()
   mu_assert(!GTBoard_CanRange(&b, 0, GTDirection_EastEast), "can range friend");
   b.units[0].color = GTPlayer_White;
   mu_assert(GTBoard_CanRange(&b, 0, GTDirection_EastEast), "can't range");
+  return NULL;
+}
+
+static char* Test_GTBoard_CanStay()
+{
+  GTBoard b;
+  GTBoard_Init(&b);
+  GTBoard_CreateUnit(&b, GTPlayer_None, GTUnitType_Gatherer, GTBoard_ValidMin);
+  mu_assert(!GTBoard_CanStay(&b, 0), "unit with mvmt = 0 can stay");
+  GTBoard_ResetUnitMovement(&b, 0);
+  mu_assert(GTBoard_CanStay(&b, 0), "unit can't stay");
   return NULL;
 }
 
@@ -299,14 +321,27 @@ static char* Test_GTBoard_Range()
   GTBoard_CreateUnit(&b, GTPlayer_Black, GTUnitType_Archer, GTBoard_ValidMin);
   GTBoard_CreateUnit(&b, GTPlayer_White, GTUnitType_Archer, easteast);
   GTBoard_ResetUnitMovement(&b, 0);
-  mu_assert(GTBoard_Range(&b, 0, GTDirection_EastEast) == -1,
-    "mountain ignored");
+  mu_assert(GTBoard_Range(&b, 0, GTDirection_EastEast) == 0,
+    "range should not error even with mountain");
+  mu_assert(GTBoard_IsUnit(&b, easteast), "mountain ignored");
   mu_assert(b.tiles[east].isRevealed, "mountain not revealed");
   b.tiles[east].type = GTTileType_Plains;
   GTBoard_ResetUnitMovement(&b, 0);
   mu_assert(GTBoard_Range(&b, 0, GTDirection_EastEast) == 0, "range failed");
   mu_assert(GTBoard_IsEmpty(&b, easteast), "board not empty");
   mu_assert(b.units[1].life == 0, "unit not damaged");
+  return NULL;
+}
+
+static char* Test_GTBoard_Stay()
+{
+  GTBoard b;
+  GTBoard_Init(&b);
+  GTBoard_CreateUnit(&b, GTPlayer_None, GTUnitType_Gatherer, GTBoard_ValidMin);
+  GTBoard_ResetUnitMovement(&b, 0);
+  mu_assert(b.units[0].movement == 1, ".movement wrong");
+  GTBoard_Stay(&b, 0);
+  mu_assert(b.units[0].movement == 0, ".movement wrong");
   return NULL;
 }
 
@@ -472,9 +507,11 @@ static char* Test_All()
   mu_run_test(Test_GTBoard_IsUnit);
   mu_run_test(Test_GTBoard_IsRevealed);
   mu_run_test(Test_GTBoard_IsValidUnit);
+  mu_run_test(Test_GTBoard_IsRanged);
   mu_run_test(Test_GTBoard_CanMoveUnit);
   mu_run_test(Test_GTBoard_CanProduceUnit);
   mu_run_test(Test_GTBoard_CanRange);
+  mu_run_test(Test_GTBoard_CanStay);
   mu_run_test(Test_GTBoard_RevealTile);
   mu_run_test(Test_GTBoard_CreateUnit);
   mu_run_test(Test_GTBoard_ResetUnitMovement);
@@ -483,6 +520,7 @@ static char* Test_All()
   mu_run_test(Test_GTBoard_MoveUnit);
   mu_run_test(Test_GTBoard_Range);
   mu_run_test(Test_GTBoard_ProduceUnit);
+  mu_run_test(Test_GTBoard_Stay);
   mu_run_test(Test_GTBoard_UndoPlay);
   mu_run_test(Test_GTBoard_EndTurn);
   mu_run_test(Test_GTBoard_ParseUnit);

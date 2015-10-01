@@ -35,7 +35,7 @@ static char* Test_GTGame_DoCommand()
   GTGame_Init(&g, &b);
   GTCommand c;
   GTCommand_Init(&c);
-  mu_assert(GTGame_DoCommand(&g, &c) == -1, "illegal cmdmand valid");
+  mu_assert(GTGame_DoCommand(&g, &c) == -1, "illegal command valid");
   c.cmd = GTCommandType_Exit;
   mu_assert(GTGame_DoCommand(&g, &c) == -1, "exit didn't return -1");
   mu_assert(c.err == GTCommandError_Exit, ".err wrong");
