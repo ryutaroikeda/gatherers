@@ -1,23 +1,19 @@
 #ifndef _GTSERVER_H_
 #define _GTSERVER_H_
 
+#include "board.h"
+
 #define enum_type(t) typedef enum t t
 #define struct_type(t) typedef struct t t
 
+struct GTStream;
+
 enum
 {
-  GTHttp_UrlSize = 256,
-  GTHttpRequest_BodySize = 2048
+  GTServer_UrlSize = 255,
+  GTServer_BodySize = 8192,
+  GTServer_ClientSize = 1
 };
-
-enum GTHttpVersion
-{
-  GTHttpVersion_None,
-  GTHttpVersion_1_0,
-  GTHttpVersion_1_1,
-  GTHttpVersion_Size
-};
-enum_type(GTHttpVersion);
 
 enum GTHttpMethod
 {
@@ -26,8 +22,17 @@ enum GTHttpMethod
   GTHttpMethod_Head,
   GTHttpMethod_Post,
   GTHttpMethod_Size
-}
+};
 enum_type(GTHttpMethod);
+
+enum GTHttpStatus
+{
+  GTHttpStatus_None,
+  GTHttpStatus_Ok = 200,
+  GTHttpStatus_BadRequest = 400,
+  GTHttpStatus_ServerError = 500
+};
+enum_type(GTHttpStatus);
 
 enum GTHttpHeader
 {
@@ -35,55 +40,64 @@ enum GTHttpHeader
   // general header
   GTHttpHeader_Connection,
   // entity header
-  GTHttpHeader_ContentEncoding,
-  GTHttpHeader_ContentType,
+  // GTHttpHeader_ContentEncoding,
+  // GTHttpHeader_ContentType,
+  // GTHttpHeader_ContentLength,
   // request header
   GTHttpHeader_Host,
   GTHttpHeader_Size
 };  
 enum_type(GTHttpHeader);
 
-struct GTHttpRequestLine
+struct GTRequest
 {
   GTHttpMethod method;
-  GTHttpVersion version;
-  char url[GTHttp_UrlSize];
+  char url[GTServer_UrlSize];
+  char body[GTServer_BodySize];
 };
-struct_type(GTHttpRequestLine);
+struct_type(GTRequest);
 
-struct GTHttpRequest
+struct GTResponse
 {
-  GTHttpRequestLine line;
-  char body[GTHttpRequest_BodySize];
+  GTHttpStatus status;
+  char body[GTServer_BodySize];
 };
-struct_type(GTHttpRequest);
+struct_type(GTResponse);
 
-enum GTHttpStatusCode
+struct GTConnection
 {
-  GTHttpStatusCode_None,
-  GTHttpStatusCode_Ok = 200,
-  GTHttpStatusCode_BadRequest = 400,
-  GTHttpStatusCode_ServerError = 500
-}
-enum_type(GTHttpStatusCode);
-
-struct GTHttpStatusLine
-{
-  GTHttpVersion version;
-  GTHttpStatusCode status;
+  int conn;
+  GTRequest* req;
+  GTResponse* res;
 };
-struct_type(GTHttpStatusLine);
+struct_type(GTConnection);
 
-struct GTHttpServer
+int GTConnection_Init(GTConnection* c, GTRequest* req, GTResponse* res);
+
+int GTConnection_ParseRequest(GTConnection* c, struct GTStream* s);
+
+struct GTClient
 {
-
+  int id;
 };
-struct_type(GTHttpServer);
+struct_type(GTClient);
 
-struct GTHttpClient
+struct GTSession
 {
-
+  GTPlayer client;
 };
-struct_type(GTHttpClient);
+
+struct GTServer
+{
+  int listenSize;
+  int clientSize;
+  int sock;
+  // GTHttpClient clients[GTHttpServer_ClientSize];
+};
+struct_type(GTServer);
+
+struct GTStream;
+
+int GTServer_Init(GTServer* svr);
 
 #endif

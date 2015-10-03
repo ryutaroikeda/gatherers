@@ -10,15 +10,15 @@ struct GTStream;
 
 typedef char (*GTSCharGetter)(struct GTStream*);
 
-enum GTStreamMode
-{
-  GTStreamMode_None,
-  GTStreamMode_ReadString,
-  GTStreamMode_ReadFile,
-  GTStreamMode_ReadRawFile,
-  GTStreamMode_Size
-};
-enum_type(GTStreamMode);
+// enum GTStreamMode
+// {
+//   GTStreamMode_None,
+//   GTStreamMode_String,
+//   GTStreamMode_File,
+//   GTStreamMode_RawFile,
+//   GTStreamMode_Size
+// };
+// enum_type(GTStreamMode);
 
 enum GTStreamError
 {
@@ -45,14 +45,15 @@ struct GTStream
   GTStreamError err;
 };
 struct_type(GTStream);
+
 // for internal use only
-char GTStream_GetString(GTStream* s);
+// char GTStream_GetString(GTStream* s);
 // for internal use only
-char GTStream_GetFile(GTStream* s);
+// char GTStream_GetFile(GTStream* s);
 // for internal use only
-char GTStream_GetSocket(GTStream* s);
+// char GTStream_GetSocket(GTStream* s);
 // for internal use only
-int GTStream_Init(GTStream* s);
+// int GTStream_Init(GTStream* s);
 
 int GTStream_InitString(GTStream* s, char* str);
 
@@ -62,9 +63,11 @@ int GTStream_InitSocket(GTStream* s, int socket);
 
 char GTStream_Get(GTStream* s);
 
-int GTStream_GetToken(GTStream* s, char* buf, int size, char* delimiter);
+int GTStream_Read(GTStream* s, char* buf, int size);
 
-int GTStream_Skip(GTStream* s, char* skip);
+int GTStream_GetToken(GTStream* s, char* buf, int size, const char* delimiter);
+
+int GTStream_Skip(GTStream* s, const char* skip);
 
 #undef enum_type
 #undef struct_type
