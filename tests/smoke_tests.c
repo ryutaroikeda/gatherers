@@ -2,6 +2,7 @@
 #include "board.h"
 #include "cmdline.h"
 #include "game.h"
+#include "server.h"
 
 #define Test_CharGet(i) \
 static char Test_CharGet ## i(void) \
@@ -105,6 +106,13 @@ static char* Test_3()
   mu_assert(GTBoard_IsEmpty(&b, GTBoard_Pos(2, 4)), "stay didn't prevent move");
   return NULL;
 }
+
+// static char* Test_Server()
+// {
+//   GTServer svr;
+  
+//   return NULL;
+// }
 
 static char* Test_All()
 {

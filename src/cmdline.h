@@ -1,10 +1,12 @@
 #ifndef _GTCMDLINE_H_
 #define _GTCMDLINE_H_
 
-#include "util.h"
 #include "types.h"
 #include "io.h"
-//
+
+#define enum_type(t) typedef enum t t
+#define struct_type(t) typedef struct t t
+
 // syntax of cmdmands
 //
 // Command = Move | Range | Produce | Stay | Done | Exit
@@ -75,4 +77,6 @@ int GTCommand_Get(GTCommand* c, GTCharGetter g);
 // get command from stdin
 int GTCommand_GetStdin(GTCommand* c);
 
+#undef enum_type
+#undef struct_type
 #endif

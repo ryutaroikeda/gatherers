@@ -11,6 +11,7 @@ struct GTStream;
 enum
 {
   GTServer_UrlSize = 255,
+  GTServer_HostSize = 255,
   GTServer_BodySize = 8192,
   GTServer_ClientSize = 1
 };
@@ -42,7 +43,7 @@ enum GTHttpHeader
   // entity header
   // GTHttpHeader_ContentEncoding,
   // GTHttpHeader_ContentType,
-  // GTHttpHeader_ContentLength,
+  GTHttpHeader_ContentLength,
   // request header
   GTHttpHeader_Host,
   GTHttpHeader_Size
@@ -52,10 +53,14 @@ enum_type(GTHttpHeader);
 struct GTRequest
 {
   GTHttpMethod method;
+  long int contentLength;
   char url[GTServer_UrlSize];
+  char host[GTServer_HostSize];
   char body[GTServer_BodySize];
 };
 struct_type(GTRequest);
+
+int GTRequest_Init(GTRequest* req);
 
 struct GTResponse
 {
@@ -63,6 +68,8 @@ struct GTResponse
   char body[GTServer_BodySize];
 };
 struct_type(GTResponse);
+
+int GTResponse_Init(GTResponse* res);
 
 struct GTConnection
 {
@@ -96,8 +103,10 @@ struct GTServer
 };
 struct_type(GTServer);
 
-struct GTStream;
-
 int GTServer_Init(GTServer* svr);
 
+int GTServer_Run(GTServer* svr);
+
+#undef enum_type
+#undef struct_type 
 #endif

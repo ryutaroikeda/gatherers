@@ -3,6 +3,7 @@
 #include "stream.h"
 #include "writer.h"
 #include <netinet/in.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -10,6 +11,31 @@
 // {
 //   "", "GET", "HEAD", "POST"
 // };
+
+// static const char* httpHeader[GTHttpHeader_Size] =
+// {
+//   "",
+//   "Connection",
+//   "Content-Length",
+//   "Host",
+// };
+
+int GTRequest_Init(GTRequest* req)
+{
+  req->method = GTHttpMethod_None;
+  req->contentLength = 0;
+  memset(req->url, 0, GTServer_UrlSize);
+  memset(req->host, 0, GTServer_HostSize);
+  memset(req->body, 0, GTServer_BodySize);
+  return 0;
+}
+
+int GTResponse_Init(GTResponse* res)
+{
+  res->status = GTHttpStatus_None;
+  memset(res->body, 0, GTServer_BodySize);
+  return 0;
+}
 
 int GTConnection_Init(GTConnection* c, GTRequest* req, GTResponse* res)
 {
@@ -24,7 +50,7 @@ int GTConnection_Close(GTConnection* c)
   return close(c->conn);
 }
 
-int GTSever_Init(GTServer* svr)
+int GTServer_Init(GTServer* svr)
 {
   svr->listenSize = 10;
   svr->clientSize = 0;
@@ -74,6 +100,7 @@ int GTServer_Listen(GTServer* svr)
 int GTServer_Accept(GTServer* svr, GTConnection* c) 
 {
   int conn;
+  log_info("awaiting client...");
   conn = accept(svr->sock, NULL, NULL);
   if (conn == -1) {
     log_err("accept failed");
@@ -83,40 +110,83 @@ int GTServer_Accept(GTServer* svr, GTConnection* c)
   return 0;
 }
 
-int GTConnection_ParseRequest(GTConnection* c, GTStream* s)
+int GTConnection_ParseRequestLine(GTConnection* c, GTStream* s)
 {
-  const char* SP = " ";
-  const char* CR = "\r";
-  const char* LF = "\n";
   enum { bufSize = 1024 };
   char buf[bufSize];
   c->res->status = GTHttpStatus_Ok;
-  GTStream_GetToken(s, buf, bufSize, SP);
+  GTStream_GetToken(s, buf, bufSize, " ");
+  debug("request method: %s", buf);
   if (strcmp(buf, "GET") == 0) {
     c->req->method = GTHttpMethod_Get;
   } else {
     c->res->status = GTHttpStatus_BadRequest;
-    log_warn("bad request");
+    log_err("bad request");
     return -1;
   }
-  GTStream_GetToken(s, c->req->url, GTServer_UrlSize, SP);
-  GTStream_GetToken(s, buf, bufSize, CR);
+  GTStream_Skip(s, "/");
+  GTStream_GetToken(s, c->req->url, GTServer_UrlSize, " ");
+  GTStream_GetToken(s, buf, bufSize, "\r");
   if (strcmp(buf, "HTTP/1.1") != 0) {
     c->res->status = GTHttpStatus_BadRequest;
-    log_warn("bad version");
+    log_err("bad version");
     return -1;
   }
-  GTStream_GetToken(s, buf, bufSize, LF);
-  // ignore headers
-  GTStream_GetToken(s, buf, bufSize, LF);
-  while(strlen(buf)) {
-    GTStream_GetToken(s, buf, bufSize, LF);
+  GTStream_GetToken(s, buf, bufSize, "\n");
+  return 0;
+}
+
+int GTConnection_ParseHeader(GTConnection* c, GTStream* s)
+{
+  enum { tokSize = 256 };
+  char tok[tokSize];
+  GTStream_GetToken(s, tok, tokSize, ":");
+  if (strcmp(tok, "Content-Length") == 0) {
+    GTStream_Skip(s, " ");
+    GTStream_GetToken(s, tok, tokSize, " \t\r\n");
+    c->req->contentLength = strtol(tok, NULL, 10);
+  } else if (strcmp(tok, "Host") == 0) {
+    GTStream_Skip(s, " ");
+    GTStream_GetToken(s, c->req->host, GTServer_HostSize, " \t\r\n");
   }
-  // ignore body
-  // to do: parse body
-  while (GTStream_Read(s, buf, bufSize) == 0) {
-    // do nothing
+  return 0;
+}
+
+int GTConnection_ParseHeaders(GTConnection* c, GTStream* s)
+{
+  enum {
+   lineSize = 1024
+  };
+  char line[lineSize];
+  while (1) {
+    GTStream_GetToken(s, line, lineSize, "\r");
+    debug("%s", line);
+    if (!strlen(line)) { break; }
+    GTStream t;
+    GTStream_InitString(&t, line);
+    GTConnection_ParseHeader(c, &t);
+    // end of current header
+    GTStream_GetToken(s, line, lineSize, "\n");
   }
+  return 0;
+}
+
+int GTConnection_ParseRequest(GTConnection* c, GTStream* s)
+{
+  int err;
+  err = GTConnection_ParseRequestLine(c, s);
+  if (err == -1) {
+    return -1;
+  }
+  debug("parsing headers");
+  err = GTConnection_ParseHeaders(c, s);
+  if (err == -1) {
+    return -1;
+  }
+  #define Min(x, y) ((x) < (y) ? (x) : (y))
+  debug("body is %ld bytes", Min(c->req->contentLength, GTServer_BodySize));
+  GTStream_Read(s, c->req->body, Min(c->req->contentLength, GTServer_BodySize));
+  #undef Min
   return 0;
 }
 
@@ -127,15 +197,16 @@ int GTConnection_GetRequest(GTConnection* c)
   return GTConnection_ParseRequest(c, &stream);
 }
 
-
 int GTServer_HandleRequest(GTServer* svr, GTConnection* c)
 {
-  (void)svr;
+  int err;
   if (c->res->status != GTHttpStatus_Ok) { return -1; }
-  if (strlen(c->req->body)) {
+  if (strlen(c->req->body) && c->req->method == GTHttpMethod_Post) {
     // handle body
+    (void)svr;
     return 0;
   }
+  if (c->req->method != GTHttpMethod_Get) { return 0; }
   char file[GTServer_UrlSize];
   GTWriter w;
   GTWriter_InitString(&w, file, GTServer_UrlSize);
@@ -143,7 +214,21 @@ int GTServer_HandleRequest(GTServer* svr, GTConnection* c)
   if (strcmp(c->req->url, "/")) {
     GTWriter_Write(&w, "index.html");
   } else {
-    // open file
+    GTWriter_Write(&w, "%s", c->req->url);
+  }
+  FILE* f = fopen(file, "r");
+  if (f == NULL) {
+    c->res->status = GTHttpStatus_ServerError;
+    log_warn("could not open file %s", file);
+    return -1;
+  }
+  GTStream s;
+  GTStream_InitFile(&s, f);
+  err = GTStream_Read(&s, c->res->body, GTServer_BodySize);
+  if (err == -1) {
+    c->res->status = GTHttpStatus_ServerError;
+    log_warn("error reading file %s", file);
+    return -1;
   }
   return 0;
 }
@@ -193,6 +278,8 @@ int GTServer_Run(GTServer* svr)
     GTConnection c;
     GTRequest req;
     GTResponse res;
+    GTRequest_Init(&req);
+    GTResponse_Init(&res);
     GTConnection_Init(&c, &req, &res);
     GTServer_Accept(svr, &c);
     GTConnection_GetRequest(&c);

@@ -1,8 +1,10 @@
 #ifndef _GTGAME_H_
 #define _GTGAME_H_
 
-#include "util.h"
 #include "types.h"
+
+#define enum_type(t) typedef enum t t
+#define struct_type(t) typedef struct t t
 
 struct GTBoard;
 struct GTCommand;
@@ -36,4 +38,6 @@ int GTGame_PlayStdin(GTGame* g);
 
 int GTGame_PrintInfo(const GTGame* g, FILE* stream);
 
+#undef enum_type
+#undef struct_type
 #endif

@@ -1,6 +1,5 @@
 #ifndef _GTWRITER_H_
 #define _GTWRITER_H_
-
 #include <stdio.h>
 
 #define enum_type(t) typedef enum t t
@@ -46,12 +45,11 @@ int GTWriter_InitString(GTWriter* w, char* s, int size);
 int GTWriter_InitFile(GTWriter* w, FILE* file);
 
 #define GTWriter_Min(x, y) ((x) < (y) ? (x) : (y))
-
 #define GTWriter_Write(w, ...)                                               \
 do {                                                                         \
   if ((w)->mode == GTWriterMode_String) {                                    \
     int len = snprintf((w)->stream.str.s, (w)->stream.str.cap, __VA_ARGS__); \
-    int n = GTWriter_Min(len, (w)->stream.str.cap);                          \
+    int n = GTWriter_Min(len, (w)->stream.str.cap);                                   \
     (w)->stream.str.s += n;                                                  \
     (w)->stream.str.cap -= n;                                                \
     if ((w)->stream.str.cap <= 0) {                                          \
@@ -64,4 +62,6 @@ do {                                                                         \
   }                                                                          \
 } while (0)   
 
+#undef enum_type
+#undef struct_type
 #endif

@@ -6,7 +6,7 @@ enum {
   GTStream_BufferSize = 1024
 };
 
-static char GTStream_GetString(GTStream *s)
+char GTStream_GetString(GTStream *s)
 {
   if (*s->stream.str) {
     return *s->stream.str++;
@@ -34,18 +34,21 @@ static char GTStream_GetSocket(GTStream* s)
     return buffer[next++];
   }
   next = 0;
+  memset(buffer, 0, GTStream_BufferSize);
   size = read(s->stream.fd, buffer, GTStream_BufferSize);
   if (size <= 0) { 
     s->err = GTStreamError_SocketFailed;
     return '\0';
   }
-  return buffer[size++];
+  debug("%s", buffer);
+  return buffer[next++];
 }
 
 static int GTStream_Init(GTStream* s)
 {
   s->err = GTStreamError_None;
   s->didSkip = 0;
+  s->skipped = '\0';
   return 0;
 }
 

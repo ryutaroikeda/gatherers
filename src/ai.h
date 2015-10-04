@@ -1,9 +1,11 @@
 #ifndef _GTAI_H_
 #define _GTAI_H_
 
-#include "util.h"
 #include "types.h"
 #include "cmdline.h"
+
+#define enum_type(t) typedef enum t t
+#define struct_type(t) typedef struct t t
 
 struct GTBoard;
 
@@ -59,4 +61,6 @@ int GTAI_Init(GTAI *ai);
 // plays random legal moves
 int GTAI_Random(GTCommand* c);
 
+#undef enum_type
+#undef struct_type
 #endif

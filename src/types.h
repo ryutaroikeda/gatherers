@@ -1,7 +1,8 @@
 #ifndef _GTTYPES_H_
 #define _GTTYPES_H_
 
-#include "util.h"
+#define enum_type(t) typedef enum t t
+#define struct_type(t) typedef struct t t
 
 enum GTTileType
 {
@@ -74,4 +75,6 @@ enum GTDirection
 };
 enum_type(GTDirection);
 
+#undef enum_type
+#undef struct_type
 #endif

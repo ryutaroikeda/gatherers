@@ -1,9 +1,10 @@
 #ifndef _GTBOARD_H_
 #define _GTBOARD_H_
-#include "util.h"
 #include "types.h"
 #include "stack.h"
 
+#define enum_type(t) typedef enum t t
+#define struct_type(t) typedef struct t t
 //
 // Unless otherwise stated, the functions below return 0 on success and a
 // negative integer on failure.
@@ -154,4 +155,6 @@ int GTBoard_PrintTiles(const GTBoard* b, FILE* stream);
 
 int GTBoard_PrintDemographics(const GTBoard* b, FILE* stream);
 
+#undef enum_type
+#undef struct_type
 #endif

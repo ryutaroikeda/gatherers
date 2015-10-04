@@ -1,7 +1,8 @@
 #ifndef _GTSTACK_H_
 #define _GTSTACK_H_
 
-#include "util.h"
+#define enum_type(t) typedef enum t t
+#define struct_type(t) typedef struct t t
 
 enum GTStackCode
 {
@@ -68,4 +69,6 @@ int GTStack_BeginPlay(GTStack* s);
 
 int GTStack_BeginTurn(GTStack* s);
 
+#undef enum_type
+#undef struct_type
 #endif
