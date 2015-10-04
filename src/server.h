@@ -105,6 +105,10 @@ struct_type(GTServer);
 
 int GTServer_Init(GTServer* svr);
 
+int GTServer_Filter(GTServer* svr, char* s, const char* f);
+
+int GTServer_CleanUrl(GTServer* svr, char* url);
+
 int GTServer_Run(GTServer* svr);
 
 #undef enum_type

@@ -1,4 +1,5 @@
 #include "dbg.h"
+#include "lexer.h"
 #include "server.h"
 #include "stream.h"
 #include "writer.h"
@@ -124,7 +125,6 @@ int GTConnection_ParseRequestLine(GTConnection* c, GTStream* s)
     log_err("bad request");
     return -1;
   }
-  GTStream_Skip(s, "/");
   GTStream_GetToken(s, c->req->url, GTServer_UrlSize, " ");
   GTStream_GetToken(s, buf, bufSize, "\r");
   if (strcmp(buf, "HTTP/1.1") != 0) {
@@ -197,9 +197,59 @@ int GTConnection_GetRequest(GTConnection* c)
   return GTConnection_ParseRequest(c, &stream);
 }
 
+int GTServer_Filter(GTServer* svr, char* s, const char* filter)
+{
+  (void) svr;
+  int i;
+  char* next = s;
+  const int len = strlen(s);
+  for (i = 0; i < len; i++) {
+    if (strchr(filter, s[i])) {
+      *(next++) = s[i];
+    }
+  }
+  *next = '\0';
+  return 0;
+}
+
+int GTServer_CleanUrl(GTServer* svr, char* url)
+{
+  static const char* f =
+  "abcdefghijklmnopqrstuvwxyz"
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  "0123456789"
+  "-_/";
+  static const char* g =
+  "abcdefghijklmnopqrstuvwxyz"
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  "0123456789"
+  "-_";
+  (void) svr;
+  char buf[GTServer_UrlSize];
+  strncpy(buf, url, GTServer_UrlSize);
+  memset(url, 0, GTServer_UrlSize);
+  GTWriter w;
+  GTWriter_InitString(&w, url, GTServer_UrlSize);
+  GTWriter_Write(&w, "public_html/");
+  GTLexer l;
+  GTLexer_Init(&l, buf);
+  GTLexer_Skip(&l, "/");
+  char* tok = GTLexer_GetToken(&l, ".");
+  if (!tok) {
+    GTWriter_Write(&w, "index.html");
+    return 0;
+  }
+  GTServer_Filter(svr, tok, f);
+  GTWriter_Write(&w, "%s", tok);
+  tok = GTLexer_GetToken(&l, "\0");
+  if (!tok) { return 0; }
+  GTServer_Filter(svr, tok, g);
+  GTWriter_Write(&w, ".%s", tok);
+  return 0;
+}
+
 int GTServer_HandleRequest(GTServer* svr, GTConnection* c)
 {
-  int err;
   if (c->res->status != GTHttpStatus_Ok) { return -1; }
   if (strlen(c->req->body) && c->req->method == GTHttpMethod_Post) {
     // handle body
@@ -207,29 +257,17 @@ int GTServer_HandleRequest(GTServer* svr, GTConnection* c)
     return 0;
   }
   if (c->req->method != GTHttpMethod_Get) { return 0; }
-  char file[GTServer_UrlSize];
-  GTWriter w;
-  GTWriter_InitString(&w, file, GTServer_UrlSize);
-  GTWriter_Write(&w, "public_html/");
-  if (strcmp(c->req->url, "")) {
-    GTWriter_Write(&w, "index.html");
-  } else {
-    GTWriter_Write(&w, "%s", c->req->url);
-  }
-  FILE* f = fopen(file, "r");
+  debug("raw url is %s", c->req->url);
+  GTServer_CleanUrl(svr, c->req->url);
+  FILE* f = fopen(c->req->url, "r");
   if (f == NULL) {
     c->res->status = GTHttpStatus_ServerError;
-    log_warn("could not open file %s", file);
+    log_warn("could not open file %s", c->req->url);
     return -1;
   }
   GTStream s;
   GTStream_InitFile(&s, f);
-  err = GTStream_Read(&s, c->res->body, GTServer_BodySize);
-  if (err == -1) {
-    c->res->status = GTHttpStatus_ServerError;
-    log_warn("error reading file %s", file);
-    return -1;
-  }
+  GTStream_Read(&s, c->res->body, GTServer_BodySize);
   return 0;
 }
 

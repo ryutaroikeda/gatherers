@@ -3,6 +3,25 @@
 #include "stream.h"
 #include <string.h>
 
+static char* Test_Filter()
+{
+  GTServer svr;
+  char file[GTServer_UrlSize] = "/";
+  GTServer_Filter(&svr, file, "abc");
+  mu_assert(strlen(file) == 0, "wrong len");
+  return NULL;
+}
+
+static char* Test_CleanUrl()
+{
+  GTServer svr;
+  char file[GTServer_UrlSize] = "/";
+  GTServer_CleanUrl(&svr, file);
+  mu_assert(strcmp(file, "public_html/index.html") == 0,
+    "wrong file");
+  return NULL;
+}
+
 static char* Test_ParseRequest()
 {
   char* input = "GET /gatherers.com HTTP/1.1\r\nHost: localhost\r\n\r\n";
@@ -16,7 +35,7 @@ static char* Test_ParseRequest()
   GTStream_InitString(&s, input);
   mu_assert(GTConnection_ParseRequest(&c, &s) == 0, "parse error");
   mu_assert(res.status == GTHttpStatus_Ok, ".status wrong");
-  mu_assert(strcmp(req.url, "gatherers.com") == 0, ".url wrong");
+  mu_assert(strcmp(req.url, "/gatherers.com") == 0, ".url wrong");
   mu_assert(req.contentLength == 0, ".contentLength wrong");
   input =
   "GET / HTTP/1.1\r\n"
@@ -40,6 +59,8 @@ static char* Test_ParseRequest()
 static char* Test_All()
 {
   mu_suite_start();
+  mu_run_test(Test_Filter);
+  mu_run_test(Test_CleanUrl);
   mu_run_test(Test_ParseRequest);
   return NULL;
 }
