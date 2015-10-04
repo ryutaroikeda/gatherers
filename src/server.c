@@ -211,7 +211,7 @@ int GTServer_HandleRequest(GTServer* svr, GTConnection* c)
   GTWriter w;
   GTWriter_InitString(&w, file, GTServer_UrlSize);
   GTWriter_Write(&w, "public_html/");
-  if (strcmp(c->req->url, "/")) {
+  if (strcmp(c->req->url, "")) {
     GTWriter_Write(&w, "index.html");
   } else {
     GTWriter_Write(&w, "%s", c->req->url);

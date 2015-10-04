@@ -42,6 +42,7 @@ struct GTStream
   } stream;
   char skipped;
   int didSkip;
+  int requiresNewBuffer;
   GTSCharGetter get;
   // GTStreamMode mode;
   GTStreamError err;

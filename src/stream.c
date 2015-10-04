@@ -30,7 +30,7 @@ static char GTStream_GetSocket(GTStream* s)
   static char buffer[GTStream_BufferSize];
   static int next = 0;
   static int size = 0;
-  if (next < size) {
+  if (next < size && !s->requiresNewBuffer) {
     return buffer[next++];
   }
   next = 0;
@@ -40,6 +40,7 @@ static char GTStream_GetSocket(GTStream* s)
     s->err = GTStreamError_SocketFailed;
     return '\0';
   }
+  s->requiresNewBuffer = 0;
   debug("%s", buffer);
   return buffer[next++];
 }
@@ -49,6 +50,7 @@ static int GTStream_Init(GTStream* s)
   s->err = GTStreamError_None;
   s->didSkip = 0;
   s->skipped = '\0';
+  s->requiresNewBuffer = 1;
   return 0;
 }
 
