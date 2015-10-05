@@ -2,6 +2,7 @@
 #include "game.h"
 #include "board.h"
 #include "cmdline.h"
+#include "writer.h"
 
 static char* Test_GTGame_Init()
 {
@@ -35,12 +36,14 @@ static char* Test_GTGame_DoCommand()
   GTGame_Init(&g, &b);
   GTCommand c;
   GTCommand_Init(&c);
-  mu_assert(GTGame_DoCommand(&g, &c) == -1, "illegal command valid");
+  GTWriter w;
+  GTWriter_InitFile(&w, stdout);
+  mu_assert(GTGame_DoCommand(&g, &c, &w) == -1, "illegal command valid");
   c.cmd = GTCommandType_Exit;
-  mu_assert(GTGame_DoCommand(&g, &c) == -1, "exit didn't return -1");
+  mu_assert(GTGame_DoCommand(&g, &c, &w) == -1, "exit didn't return -1");
   mu_assert(c.err == GTCommandError_Exit, ".err wrong");
   c.cmd = GTCommandType_Done;
-  mu_assert(GTGame_DoCommand(&g, &c) == 0, "done failed");
+  mu_assert(GTGame_DoCommand(&g, &c, &w) == 0, "done failed");
   return NULL;
 }
 

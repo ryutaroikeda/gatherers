@@ -116,6 +116,7 @@ int GTConnection_ParseRequestLine(GTConnection* c, GTStream* s)
   } else if (strcmp(buf, "GET") == 0) {
     c->req->method = GTHttpMethod_Get;
   } else if (strcmp(buf, "POST") == 0) {
+    debug("POST request");
     c->req->method = GTHttpMethod_Post;
   } else {
     c->res->status = GTHttpStatus_BadRequest;
@@ -157,7 +158,7 @@ int GTConnection_ParseHeaders(GTConnection* c, GTStream* s)
   char line[lineSize];
   while (1) {
     GTStream_GetToken(s, line, lineSize, "\r");
-    debug("%s", line);
+    // debug("%s", line);
     if (!strlen(line)) { 
       // eat the last newline
       GTStream_GetToken(s, line, lineSize, "\n");
@@ -179,13 +180,13 @@ int GTConnection_ParseRequest(GTConnection* c, GTStream* s)
   if (err == -1) {
     return -1;
   }
-  debug("parsing headers");
+  // debug("parsing headers");
   err = GTConnection_ParseHeaders(c, s);
   if (err == -1) {
     return -1;
   }
   #define Min(x, y) ((x) < (y) ? (x) : (y))
-  debug("body is %ld bytes", Min(c->req->contentLength, GTServer_BodySize));
+  // debug("body is %ld bytes", Min(c->req->contentLength, GTServer_BodySize));
   GTStream_Read(s, c->req->body, Min(c->req->contentLength, GTServer_BodySize));
   #undef Min
   return 0;
@@ -249,21 +250,18 @@ int GTServer_CleanUrl(char* url)
   return 0;
 }
 
-int GTSession_DoCommand(GTSession* s, GTNetCommand* nc)
+int GTSession_DoCommand(GTSession* s, GTNetCommand* nc, GTWriter* w)
 {
   (void) s;
   if (nc->type == GTNetCommandType_None) { 
     log_err("no command type");
-
     return -1;
   } else if (nc->type == GTNetCommandType_Start) {
-
+    log_info("command start");
   } else if (nc->type == GTNetCommandType_Game) {
-    if (GTGame_DoCommand(s->g, &nc->game) == -1) {
+    if (GTGame_DoCommand(s->g, &nc->game, w) == -1) {
       log_err("illegal command");
-
     }
-
   }
   return 0;
 }
@@ -276,8 +274,10 @@ int GTSession_HandleRequest(GTSession* s, GTConnection* c)
     GTNetCommand nc;
     GTNetCommand_Init(&nc);
     GTNetCommand_Parse(&nc, c->req->body);
-    GTSession_DoCommand(s, &nc);
-
+    GTWriter w;
+    GTWriter_InitString(&w, c->res->body, GTServer_BodySize);
+    GTSession_DoCommand(s, &nc, &w);
+    GTGame_Print(s->g, &w);
     c->res->contentLength = strlen(c->res->body);
     return 0;
   }
@@ -322,8 +322,24 @@ int GTSession_SendResponse(GTSession* s, GTConnection* c)
 
 int GTSession_HandleConnection(GTSession* s)
 {
+  char file[] =
+   "tiles {"
+  " w, m, h, i, w,"
+  " p, h, w, m, h,"
+  " m, i, p, m, i,"
+  " i, m, p, i, m,"
+  " h, m, w, h, p,"
+  " w, i, h, m, w, }"
+  "units {"
+  "--,--,g1,--,--,"
+  "--,--,--,--,--,"
+  "--,--,--,--,--,"
+  "--,--,--,--,--,"
+  "--,--,--,--,--,"
+  "--,--,G1,--,--, }";
   GTBoard b;
   GTBoard_Init(&b);
+  GTBoard_Parse(&b, file);
   GTGame g;
   GTGame_Init(&g, &b);
   s->b = &b;

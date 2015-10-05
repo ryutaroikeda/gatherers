@@ -4,7 +4,7 @@
 #include <string.h>
 
 
-static char* protocol[] =
+static char* protocol[GTNetCommandType_Size] =
 {
   "", "start", "game"
 };
@@ -27,7 +27,7 @@ int GTNetCommand_Parse(GTNetCommand* nc, char* s)
     return -1;
   }
   for (i = 0; i < GTNetCommandType_Size; i++) {
-    if (strcmp(tok, protocol[i]) != 0) { break; }
+    if (strcmp(tok, protocol[i]) != 0) { continue; }
     nc->type = i;
   }
   GTLexer_Skip(&l, " \r\t\n");

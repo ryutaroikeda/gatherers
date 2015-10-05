@@ -16,6 +16,7 @@ TARGETMAIN=src/main.o
 TESTSCRIPT=tests/runtests.sh
 
 JSCOMPILER=~/java/closure-compiler/compiler.jar
+JSFLAGS=--language_in=ECMASCRIPT5_STRICT
 JSTARGET=public_html/gatherers-c.js
 JSSOURCE=$(wildcard javascript/*.js)
 
@@ -30,7 +31,7 @@ release: all
 web: $(JSTARGET)
 	
 $(JSTARGET): $(JSSOURCE)
-	java -jar $(JSCOMPILER) --js $(JSSOURCE) --js_output_file $@
+	java -jar $(JSCOMPILER) $(JSFLAGS) --js $(JSSOURCE) --js_output_file $@
 
 $(TARGET): build $(OBJECTS)
 	$(CC) $(LIBS) -o $@ $(OBJECTS)

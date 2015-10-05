@@ -13,6 +13,8 @@ bin/
 
 build/
 
+trash/
+
 tests/*_tests
 
 *.DS_Store

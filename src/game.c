@@ -26,7 +26,7 @@ int GTGame_IsEnd(const GTGame* g)
 // are used for accessing arrays.
 //
 
-int GTGame_DoCommand(GTGame* g, GTCommand* c)
+int GTGame_DoCommand(GTGame* g, GTCommand* c, GTWriter* w)
 {
   c->err = GTCommandError_None;
   check_debug(c->cmd != GTCommandType_None, "command needed");
@@ -40,7 +40,7 @@ int GTGame_DoCommand(GTGame* g, GTCommand* c)
     check_debug(GTBoard_UndoPlay(g->b) == 0, "cannot undo");
     return 0;
   } else if (c->cmd == GTCommandType_Info) {
-    GTGame_PrintInfo(g, stdout);
+    GTGame_PrintInfo(g, w);
     return 0;
   }
   int pos = GTBoard_Pos(c->rank, c->file);
@@ -95,16 +95,18 @@ int GTGame_Play(GTGame* g)
 {
   // end turn zero to reset unit movement
   GTBoard_EndTurn(g->b);
+  GTWriter w;
+  GTWriter_InitFile(&w, stdout);
   while (1) {
     GTCommand c;
     GTCommand_Init(&c);
-    GTGame_Print(g, stdout);
+    GTGame_Print(g, &w);
     fprintf(stdout, "player %d: ", g->p);
     if (GTGame_GetCommand(g, &c) == -1) {
       fprintf(stdout, "bad command, try again\n");
       continue;
     }
-    GTGame_DoCommand(g, &c);
+    GTGame_DoCommand(g, &c, &w);
     if (c.err == GTCommandError_Illegal) {
       fprintf(stdout, "Illegal move, try again\n");
     } else if (c.err == GTCommandError_Exit) {
@@ -126,19 +128,15 @@ int GTGame_PlayStdin(GTGame* g)
   return GTGame_Play(g);
 }
 
-int GTGame_Print(const GTGame* g, FILE* stream)
+int GTGame_Print(const GTGame* g, GTWriter* w)
 {
-  GTWriter w;
-  GTWriter_InitFile(&w, stream);
-  GTBoard_Print(g->b, &w);
+  GTBoard_Print(g->b, w);
   return 0;
 }
 
-int GTGame_PrintInfo(const GTGame* g, FILE* stream) 
+int GTGame_PrintInfo(const GTGame* g, GTWriter* w) 
 {
-  GTWriter w;
-  GTWriter_InitFile(&w, stream);
-  GTBoard_PrintDemographics(g->b, &w);
-  GTBoard_PrintTiles(g->b, &w);
+  GTBoard_PrintDemographics(g->b, w);
+  GTBoard_PrintTiles(g->b, w);
   return 0;
 }

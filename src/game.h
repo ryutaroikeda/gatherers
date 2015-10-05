@@ -8,6 +8,7 @@
 
 struct GTBoard;
 struct GTCommand;
+struct GTWriter;
 
 typedef int (*GTCommandGetter)(struct GTCommand*);
 
@@ -26,7 +27,7 @@ int GTGame_Init(GTGame* g, struct GTBoard* b);
 // return 1 if the game has ended
 int GTGame_IsEnd(const GTGame* g);
 // return -1 on error or exit command
-int GTGame_DoCommand(GTGame* g, struct GTCommand* c);
+int GTGame_DoCommand(GTGame* g, struct GTCommand* c, struct GTWriter* w);
 // get command from interface
 int GTGame_GetCommand(GTGame* g, struct GTCommand* c);
 
@@ -36,9 +37,9 @@ int GTGame_Play(GTGame* g);
 
 int GTGame_PlayStdin(GTGame* g);
 
-int GTGame_Print(const GTGame* g, FILE* stream);
+int GTGame_Print(const GTGame* g, struct GTWriter* w);
 
-int GTGame_PrintInfo(const GTGame* g, FILE* stream);
+int GTGame_PrintInfo(const GTGame* g, struct GTWriter* w);
 
 #undef enum_type
 #undef struct_type

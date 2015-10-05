@@ -203,7 +203,7 @@ GTBoard_CanProduceUnit(const GTBoard* b, int unit, GTUnitType t, GTDirection d)
   if (b->resources[u->color][tile] <= b->population[u->color][t]) { return 0; }
   return 1;
 }
-// to do: check for revealed mountain
+
 int GTBoard_CanRange(const GTBoard* b, int unit, GTDirection d)
 {
   if (!GTBoard_IsValidUnit(b, unit)) { return 0; }
@@ -214,6 +214,12 @@ int GTBoard_CanRange(const GTBoard* b, int unit, GTDirection d)
   if (!GTBoard_IsUnit(b, pos)) { return 0; }
   const GTUnit* v = &b->units[b->board[pos]];
   if (u->color == v->color) { return 0; }
+  if (d < GTDirection_NorthNorth || GTDirection_WestWest < d) { return 1; }
+  // check for revealed mountain
+  GTDirection e = d - 4;
+  int p = GTDirection_Pos(u->pos, e);
+  if (!GTBoard_IsRevealed(b, p)) { return 1; }
+  if (b->tiles[p].type == GTTileType_Mountain) { return 0; }
   return 1;
 }
 

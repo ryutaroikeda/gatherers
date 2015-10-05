@@ -163,6 +163,10 @@ static char* Test_GTBoard_CanRange()
   mu_assert(!GTBoard_CanRange(&b, 0, GTDirection_EastEast), "can range friend");
   b.units[0].color = GTPlayer_White;
   mu_assert(GTBoard_CanRange(&b, 0, GTDirection_EastEast), "can't range");
+  b.tiles[GTBoard_ValidMin + 1].type = GTTileType_Mountain;
+  b.tiles[GTBoard_ValidMin + 1].isRevealed = 1;
+  mu_assert(!GTBoard_CanRange(&b, 0, GTDirection_EastEast), 
+    "can range over revealed mountain");
   return NULL;
 }
 

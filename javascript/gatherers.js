@@ -1,9 +1,10 @@
 //
 // gatherers.js
 //
+"use strict";
 
 var HttpInterface = (function () {
-  var pingDelay = 5000;
+  var pingDelay = 10000;
 
   function isReady(http) {
     return http.readyState == 4;
@@ -15,7 +16,7 @@ var HttpInterface = (function () {
     http.send();
     http.onreadystatechange = function () {
       if (isReady(http)) {
-        f(http);
+        f(http.responseText);
       }
     }
   }
@@ -25,23 +26,24 @@ var HttpInterface = (function () {
     http.send();
     http.onreadystatechange = function () {
       if (isReady(http)) {
-        f(http);
+        f(http.responseText);
       }
     }
   }
   i.post = function (url, f, msg) {
     var http = new XMLHttpRequest();
     http.open("POST", url, true);
-    http.send();
+    http.setRequestHeader("Content-type", "game");
+    http.send(msg);
     http.onreadystatechange = function () {
       if (isReady(http)) {
-        f(http);
+        f(http.responseText);
       }
     }
   }
   
   i.ping = function(url) {
-    i.head(url, (function(http){}));
+    i.head(url, (function(text){}));
   }
 
   i.keepAliveId = setInterval(i.ping, pingDelay);
@@ -50,53 +52,46 @@ var HttpInterface = (function () {
 }());
 
 var Gatherers = (function () {
-  var pingDelay = 5000;
-
   var g = {};
 
-  g.button = document.getElementById("myButton");
+  g.consoleBox = document.getElementById("console");
+  g.console = document.getElementById("consoleTxt");
+  g.cmdline = document.getElementById("cmdline");
 
-  function printHttp(http) {
-    console.log(http.statusText);
-    console.log(http.responseText);
+  g.consoleTxt = "Welcome to Gatherers.";
+
+  g.command = "";
+
+  g.receive = function (msg) {
+    g.consoleTxt += msg;
+    g.update();
   }
 
-  g.head = function (url, f) {
-    var http = new XMLHttpRequest();
-    http.open("HEAD", url, true);
-    http.send();
-    http.onreadystatechange = function () {
-      if (http.readyState == 4) {
-        f(http);
-      }
-    }
+  g.send = function () {
+    HttpInterface.post("/", g.receive, "game: " + g.command);
   }
 
-  g.get = function(url, f) {
-    var http = new XMLHttpRequest();
-    http.onreadystatechange = function () {
-      if (http.readyState == 4) {
-        f(http);
-      }
-    }
-    http.open("GET", url, true);
-    http.send();
-  }
-
-  g.post = function(url, f, message) {
-    var http = new XMLHttpRequest();
-    http.onreadystatechange = function() {
-      if (http.readyState == 4) {
-        f(http);
-      } 
-    }
-    http.open("POST", url, true);
-    http.send(message);
-  }
-
-  g.button.onclick = function () {
-    g.head("localhost", printHttp);
+  g.update = function() {
+    g.console.innerHTML = g.consoleTxt;
+    g.consoleBox.scrollTop = g.consoleBox.scrollHeight;
+    g.cmdline.innerHTML = g.command;
   }
 
   return g;
+}());
+
+(function() {
+  document.onkeypress = function (evt) {
+    var key = evt.charCode || evt.which || evt.keyCode;
+    if (key == 13) {
+      Gatherers.send(Gatherers.command);
+      Gatherers.command = "";
+    } else if (key == 46 || key == 8 || key == 63272) {
+      Gatherers.command = Gatherers.command.slice(0, -1);
+      evt.preventDefault();
+    } else {
+      Gatherers.command += String.fromCharCode(key);
+    }
+    Gatherers.update();
+  }
 }());

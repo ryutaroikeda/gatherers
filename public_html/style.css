@@ -1,9 +1,22 @@
+
+/* style.css */
+
 * {
 	padding: 0;
-	margin: 0;
+	margin: auto;
 }
-canvas {
-	background: #eee;
-	display: block;
-	margin: 0 auto;
+
+div[id="console"] {
+	margin-top: 50px;
+	margin-left: auto;
+	margin-right: auto;
+	text-indent: 0;
+	font-family: monospace;
+	overflow: auto;
+}
+
+div[id="cmdline"] {
+	margin-left: auto;
+	margin-right: auto;
+	font-family: monospace;
 }
