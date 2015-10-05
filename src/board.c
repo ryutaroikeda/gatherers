@@ -1,6 +1,7 @@
 #include "dbg.h"
 #include "board.h"
 #include "lexer.h"
+#include "writer.h"
 #include <string.h>
 
 static const GTUnitType tileProduct[GTTileType_Size] =
@@ -546,65 +547,65 @@ int GTBoard_Parse(GTBoard* b, char* s)
   return -1;
 }
 
-int GTBoard_Print(const GTBoard* b, FILE* stream)
+int GTBoard_Print(const GTBoard* b, GTWriter* w)
 {
-  fprintf(stream, "\n  a  b  c  d  e\n");
+  GTWriter_Write(w, "\n  a  b  c  d  e\n");
   int rank, file;
   for (file = GTBoard_Height - 1; file >= 0; file--) {
-    fprintf(stream, "%d", file + 1);
+    GTWriter_Write(w, "%d", file + 1);
     for (rank = 0; rank < GTBoard_Width; rank++) {
       int pos = GTBoard_Pos(rank, file);
       if (GTBoard_IsEmpty(b, pos)) {
-        fprintf(stream, " . ");
+        GTWriter_Write(w, " . ");
       } else {
         const GTUnit* u = &b->units[b->board[pos]];
-        fprintf(stream, " %c%d", unitChar[u->color][u->type], u->life);
+        GTWriter_Write(w, " %c%d", unitChar[u->color][u->type], u->life);
       }
     }
-    fprintf(stream, "\n");
+    GTWriter_Write(w, "\n");
   }
-  fprintf(stream, "\n");
+  GTWriter_Write(w, "\n");
   return 0;
 }
 
-int GTBoard_PrintTiles(const GTBoard* b, FILE* stream)
+int GTBoard_PrintTiles(const GTBoard* b, GTWriter* w)
 {
-  fprintf(stream, "map\n  a  b  c  d  e\n");
+  GTWriter_Write(w, "map\n  a  b  c  d  e\n");
   int rank, file;
   for (file = GTBoard_Height - 1; file >= 0; file--) {
-    fprintf(stream, "%d", file + 1);
+    GTWriter_Write(w, "%d", file + 1);
     for (rank = 0; rank < GTBoard_Width; rank++) {
       int pos = GTBoard_Pos(rank, file);
       const GTTile* tile = &b->tiles[pos];
       if (!tile->isRevealed) {
-        fprintf(stream, " . ");
+        GTWriter_Write(w, " . ");
       } else {
-        fprintf(stream, " %c ", tileChar[1][tile->type]);
+        GTWriter_Write(w, " %c ", tileChar[1][tile->type]);
       }
     }
-    fprintf(stream, "\n");
+    GTWriter_Write(w, "\n");
   }
-  fprintf(stream, "\n");
+  GTWriter_Write(w, "\n");
   return 0;
 }
 
-int GTBoard_PrintDemographics(const GTBoard* b, FILE* stream)
+int GTBoard_PrintDemographics(const GTBoard* b, GTWriter* w)
 {
   int i, j;
   for (i = GTPlayer_Black; i <= GTPlayer_White; i++) {
-    fprintf(stream, "\nPlayer %.1d:\n", i);
+    GTWriter_Write(w, "\nPlayer %.1d:\n", i);
     for (j = GTUnitType_Gatherer; j < GTUnitType_Size; j++) {
-      fprintf(stream, " %c ", unitChar[i][j]);
+      GTWriter_Write(w, " %c ", unitChar[i][j]);
     }
-    fprintf(stream, "| w  h  i  l\n");
+    GTWriter_Write(w, "| w  h  i  l\n");
     for (j = GTUnitType_Gatherer; j < GTUnitType_Size; j++) {
-      fprintf(stream, " %d ", b->population[i][j]);
+      GTWriter_Write(w, " %d ", b->population[i][j]);
     }
-    fprintf(stream, "|");
+    GTWriter_Write(w, "|");
     for (j = GTTileType_Wood; j <= GTTileType_Lake; j++) {
-      fprintf(stream, " %d ", b->resources[i][j]);
+      GTWriter_Write(w, " %d ", b->resources[i][j]);
     }
   }
-  fprintf(stream, "\n");
+  GTWriter_Write(w, "\n");
   return 0;
 }

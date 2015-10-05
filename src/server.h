@@ -76,7 +76,7 @@ int GTResponse_Init(GTResponse* res);
 
 struct GTConnection
 {
-  int conn;
+  // int conn;
   GTRequest* req;
   GTResponse* res;
 };
@@ -93,7 +93,8 @@ enum GTSessionError {
 enum_type(GTSessionError);
 
 struct GTSession {
-  long ttl;
+  int conn;
+  // long ttl;
   struct GTBoard* b;
   struct GTGame* g;
   GTSessionError err;

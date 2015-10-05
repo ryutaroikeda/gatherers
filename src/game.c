@@ -2,6 +2,7 @@
 #include "game.h"
 #include "cmdline.h"
 #include "board.h"
+#include "writer.h"
 
 int GTGame_Init(GTGame* g, GTBoard* b)
 {
@@ -97,7 +98,7 @@ int GTGame_Play(GTGame* g)
   while (1) {
     GTCommand c;
     GTCommand_Init(&c);
-    GTBoard_Print(g->b, stdout);
+    GTGame_Print(g, stdout);
     fprintf(stdout, "player %d: ", g->p);
     if (GTGame_GetCommand(g, &c) == -1) {
       fprintf(stdout, "bad command, try again\n");
@@ -124,10 +125,20 @@ int GTGame_PlayStdin(GTGame* g)
   g->interface[GTPlayer_White] = &GTCommand_GetStdin;
   return GTGame_Play(g);
 }
-// to do: change to GTStream
+
+int GTGame_Print(const GTGame* g, FILE* stream)
+{
+  GTWriter w;
+  GTWriter_InitFile(&w, stream);
+  GTBoard_Print(g->b, &w);
+  return 0;
+}
+
 int GTGame_PrintInfo(const GTGame* g, FILE* stream) 
 {
-  GTBoard_PrintDemographics(g->b, stream);
-  GTBoard_PrintTiles(g->b, stream);
+  GTWriter w;
+  GTWriter_InitFile(&w, stream);
+  GTBoard_PrintDemographics(g->b, &w);
+  GTBoard_PrintTiles(g->b, &w);
   return 0;
 }

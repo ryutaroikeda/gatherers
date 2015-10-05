@@ -10,6 +10,8 @@
 // negative integer on failure.
 //
 
+struct GTWriter;
+
 extern const int GTDirection_Direction[GTDirection_Size];
 
 #define GTDirection_PosNorth(pos) \
@@ -149,11 +151,11 @@ int GTBoard_ParseTiles(GTBoard* b, char* s);
 
 int GTBoard_Parse(GTBoard* b, char* s);
 // print units
-int GTBoard_Print(const GTBoard* b, FILE* stream);
+int GTBoard_Print(const GTBoard* b, struct GTWriter* w);
 // print tiles
-int GTBoard_PrintTiles(const GTBoard* b, FILE* stream);
+int GTBoard_PrintTiles(const GTBoard* b, struct GTWriter* w);
 
-int GTBoard_PrintDemographics(const GTBoard* b, FILE* stream);
+int GTBoard_PrintDemographics(const GTBoard* b, struct GTWriter* w);
 
 #undef enum_type
 #undef struct_type

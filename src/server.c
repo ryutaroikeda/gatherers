@@ -43,7 +43,6 @@ int GTResponse_Init(GTResponse* res)
 
 int GTConnection_Init(GTConnection* c, GTRequest* req, GTResponse* res)
 {
-  c->conn = -1;
   c->req = req;
   c->res = res;
   return 0;
@@ -51,7 +50,8 @@ int GTConnection_Init(GTConnection* c, GTRequest* req, GTResponse* res)
 
 int GTSession_Init(GTSession* s)
 {
-  s->ttl = GTServer_TimeToLive;
+  // s->ttl = GTServer_TimeToLive;
+  s->conn = -1;
   s->err = GTSessionError_None;
   return 0;
 }
@@ -102,24 +102,13 @@ int GTServer_Listen(GTServer* svr)
   return 0;
 }
 
-int GTServer_Accept(GTServer* svr, GTConnection* c) 
-{
-  int conn;
-  log_info("awaiting client...");
-  conn = accept(svr->sock, NULL, NULL);
-  if (conn == -1) {
-    log_err("accept failed");
-    return -1;
-  }
-  c->conn = conn;
-  return 0;
-}
-
 int GTConnection_ParseRequestLine(GTConnection* c, GTStream* s)
 {
   enum { bufSize = 1024 };
   char buf[bufSize];
   c->res->status = GTHttpStatus_Ok;
+  // avoid getting empty methods
+  GTStream_Skip(s, " \r\t\n");
   GTStream_GetToken(s, buf, bufSize, " ");
   debug("request method: %s", buf);
   if (strcmp(buf, "HEAD") == 0) {
@@ -169,7 +158,11 @@ int GTConnection_ParseHeaders(GTConnection* c, GTStream* s)
   while (1) {
     GTStream_GetToken(s, line, lineSize, "\r");
     debug("%s", line);
-    if (!strlen(line)) { break; }
+    if (!strlen(line)) { 
+      // eat the last newline
+      GTStream_GetToken(s, line, lineSize, "\n");
+      break;
+    }
     GTStream t;
     GTStream_InitString(&t, line);
     GTConnection_ParseHeader(c, &t);
@@ -198,10 +191,12 @@ int GTConnection_ParseRequest(GTConnection* c, GTStream* s)
   return 0;
 }
 
-int GTConnection_GetRequest(GTConnection* c)
+// fixme?: set timeout for recv and check if connection is alive
+// or alternatively, check ttl and close connection on timeout
+int GTSession_GetRequest(GTSession* s, GTConnection* c)
 {
   GTStream stream;
-  GTStream_InitSocket(&stream, c->conn);
+  GTStream_InitSocket(&stream, s->conn);
   return GTConnection_ParseRequest(c, &stream);
 }
 
@@ -273,7 +268,7 @@ int GTSession_DoCommand(GTSession* s, GTNetCommand* nc)
   return 0;
 }
 
-int GTConnection_HandleRequest(GTConnection* c, GTSession* s)
+int GTSession_HandleRequest(GTSession* s, GTConnection* c)
 {
   if (c->res->status != GTHttpStatus_Ok) { return -1; }
   if (c->req->method == GTHttpMethod_Head) { return 0; }
@@ -297,7 +292,10 @@ int GTConnection_HandleRequest(GTConnection* c, GTSession* s)
   }
   GTStream stream;
   GTStream_InitFile(&stream, f);
-  GTStream_Read(&stream, c->res->body, GTServer_BodySize);
+  if (GTStream_Read(&stream, c->res->body, GTServer_BodySize) == 0) {
+    // we did not read the entire file
+    log_warn("buffer too small for file");
+  }
   c->res->contentLength = strlen(c->res->body);
   return 0;
 }
@@ -307,38 +305,40 @@ int GTConnection_WriteResponse(GTConnection* c, GTWriter* w)
   GTWriter_Write(w, "HTTP/1.1 %d None\r\n", c->res->status);
   GTWriter_Write(w, "Content-Length: %ld\r\n", c->res->contentLength);
   GTWriter_Write(w, "\r\n");
-  GTWriter_Write(w, "%s\r\n\r\n", c->res->body);
+  GTWriter_Write(w, "%s", c->res->body);
   return 0;
 }
 
-int GTConnection_SendResponse(GTConnection* c)
+int GTSession_SendResponse(GTSession* s, GTConnection* c)
 {
   GTWriter w;
   enum { bufSize = sizeof(GTResponse) };
   char buf[bufSize];
   GTWriter_InitString(&w, buf, bufSize);
   GTConnection_WriteResponse(c, &w);
-  write(c->conn, buf, strlen(buf));
+  write(s->conn, buf, strlen(buf));
   return 0;
 }
 
-int GTConnection_HandleConnection(GTConnection* c)
+int GTSession_HandleConnection(GTSession* s)
 {
   GTBoard b;
   GTBoard_Init(&b);
   GTGame g;
   GTGame_Init(&g, &b);
-  GTSession s;
-  GTSession_Init(&s);
-  s.b = &b;
-  s.g = &g;
+  s->b = &b;
+  s->g = &g;
   GTBoard_EndTurn(&b);
-  while (s.err == GTSessionError_None) {
-    // to do: set timeout for recv and check if connection is alive
-    // or alternatively, check ttl and close connection on timeout
-    GTConnection_GetRequest(c);
-    GTConnection_HandleRequest(c, &s);
-    GTConnection_SendResponse(c);
+  while (s->err == GTSessionError_None) {
+    GTRequest req;
+    GTResponse res;
+    GTConnection c;
+    GTRequest_Init(&req);
+    GTResponse_Init(&res);
+    GTConnection_Init(&c, &req, &res);
+    GTSession_GetRequest(s, &c);
+    GTSession_HandleRequest(s, &c);
+    GTSession_SendResponse(s, &c);
   }
   return 0;
 }
@@ -365,22 +365,23 @@ int GTServer_Run(GTServer* svr)
     return -1;
   }
   while (1) {
-    GTConnection c;
-    GTRequest req;
-    GTResponse res;
-    GTRequest_Init(&req);
-    GTResponse_Init(&res);
-    GTConnection_Init(&c, &req, &res);
-    GTServer_Accept(svr, &c);
+    GTSession s;
+    GTSession_Init(&s);
+    s.conn = accept(svr->sock, NULL, NULL);
+    if (s.conn == -1) {
+      log_err("failed to establish connection");
+      continue;
+    }
     pid_t pid = fork();
     if (pid == -1) {
       log_err("fork failed");
       continue;
     } else if (pid == 0) {
       close(svr->sock);
-      GTConnection_HandleConnection(&c);
+      GTSession_HandleConnection(&s);
+      break;
     } else{
-      close(c.conn);
+      close(s.conn);
       continue;
     }
   }

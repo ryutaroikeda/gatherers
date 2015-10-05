@@ -36,6 +36,8 @@ int GTGame_Play(GTGame* g);
 
 int GTGame_PlayStdin(GTGame* g);
 
+int GTGame_Print(const GTGame* g, FILE* stream);
+
 int GTGame_PrintInfo(const GTGame* g, FILE* stream);
 
 #undef enum_type

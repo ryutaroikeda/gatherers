@@ -64,6 +64,6 @@ clean:
 	rm -rf build $(OBJECTS) $(TESTS) $(DEPENDENCIES)
 	rm -f tests/tests.log
 
-ifeq (,$(filter $(MAKECMDGOALS),clean))
+ifeq (,$(filter $(MAKECMDGOALS),clean web))
 -include $(DEPENDENCIES)
 endif
