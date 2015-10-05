@@ -15,6 +15,10 @@ TARGET=bin/gatherers
 TARGETMAIN=src/main.o
 TESTSCRIPT=tests/runtests.sh
 
+JSCOMPILER=~/java/closure-compiler/compiler.jar
+JSTARGET=public_html/gatherers-c.js
+JSSOURCE=$(wildcard javascript/*.js)
+
 all: $(DEPENDENCIES) $(TARGET) tests
 
 dev: CFLAGS=-g -Wextra -Wall -pedantic -Werror -Isrc
@@ -22,6 +26,11 @@ dev: all
 
 release: CFLAGS=-g -O2 -Wextra -Wall -pedantic -Isrc $(OPTFLAGS)
 release: all
+
+web: $(JSTARGET)
+	
+$(JSTARGET): $(JSSOURCE)
+	java -jar $(JSCOMPILER) --js $(JSSOURCE) --js_output_file $@
 
 $(TARGET): build $(OBJECTS)
 	$(CC) $(LIBS) -o $@ $(OBJECTS)

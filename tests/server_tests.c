@@ -5,18 +5,16 @@
 
 static char* Test_Filter()
 {
-  GTServer svr;
   char file[GTServer_UrlSize] = "/";
-  GTServer_Filter(&svr, file, "abc");
+  GTServer_Filter(file, "abc");
   mu_assert(strlen(file) == 0, "wrong len");
   return NULL;
 }
 
 static char* Test_CleanUrl()
 {
-  GTServer svr;
   char file[GTServer_UrlSize] = "/";
-  GTServer_CleanUrl(&svr, file);
+  GTServer_CleanUrl(file);
   mu_assert(strcmp(file, "public_html/index.html") == 0,
     "wrong file");
   return NULL;

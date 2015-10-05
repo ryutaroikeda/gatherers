@@ -1,11 +1,11 @@
 #ifndef _GTSERVER_H_
 #define _GTSERVER_H_
 
-#include "board.h"
-
 #define enum_type(t) typedef enum t t
 #define struct_type(t) typedef struct t t
 
+struct GTBoard;
+struct GTGame;
 struct GTStream;
 
 enum
@@ -13,7 +13,8 @@ enum
   GTServer_UrlSize = 255,
   GTServer_HostSize = 255,
   GTServer_BodySize = 8192,
-  GTServer_ClientSize = 1
+  // GTServer_ClientSize = 1,
+  GTServer_TimeToLive = 60
 };
 
 enum GTHttpMethod
@@ -31,6 +32,7 @@ enum GTHttpStatus
   GTHttpStatus_None,
   GTHttpStatus_Ok = 200,
   GTHttpStatus_BadRequest = 400,
+  GTHttpStatus_NotFound = 404,
   GTHttpStatus_ServerError = 500
 };
 enum_type(GTHttpStatus);
@@ -65,6 +67,7 @@ int GTRequest_Init(GTRequest* req);
 struct GTResponse
 {
   GTHttpStatus status;
+  long int contentLength;
   char body[GTServer_BodySize];
 };
 struct_type(GTResponse);
@@ -83,31 +86,33 @@ int GTConnection_Init(GTConnection* c, GTRequest* req, GTResponse* res);
 
 int GTConnection_ParseRequest(GTConnection* c, struct GTStream* s);
 
-struct GTClient
-{
-  int id;
+enum GTSessionError {
+  GTSessionError_None,
+  GTSessionError_Size
 };
-struct_type(GTClient);
+enum_type(GTSessionError);
 
-struct GTSession
-{
-  GTPlayer client;
+struct GTSession {
+  long ttl;
+  struct GTBoard* b;
+  struct GTGame* g;
+  GTSessionError err;
 };
+struct_type(GTSession);
 
-struct GTServer
-{
+int GTSession_Init(GTSession* s);
+
+struct GTServer {
   int listenSize;
-  int clientSize;
   int sock;
-  // GTHttpClient clients[GTHttpServer_ClientSize];
 };
 struct_type(GTServer);
 
 int GTServer_Init(GTServer* svr);
 
-int GTServer_Filter(GTServer* svr, char* s, const char* f);
+int GTServer_Filter(char* s, const char* f);
 
-int GTServer_CleanUrl(GTServer* svr, char* url);
+int GTServer_CleanUrl(char* url);
 
 int GTServer_Run(GTServer* svr);
 

@@ -124,7 +124,7 @@ int GTGame_PlayStdin(GTGame* g)
   g->interface[GTPlayer_White] = &GTCommand_GetStdin;
   return GTGame_Play(g);
 }
-
+// to do: change to GTStream
 int GTGame_PrintInfo(const GTGame* g, FILE* stream) 
 {
   GTBoard_PrintDemographics(g->b, stream);

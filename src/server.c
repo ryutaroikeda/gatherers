@@ -1,5 +1,8 @@
 #include "dbg.h"
+#include "board.h"
+#include "game.h"
 #include "lexer.h"
+#include "netcmd.h"
 #include "server.h"
 #include "stream.h"
 #include "writer.h"
@@ -46,15 +49,16 @@ int GTConnection_Init(GTConnection* c, GTRequest* req, GTResponse* res)
   return 0;
 }
 
-int GTConnection_Close(GTConnection* c)
+int GTSession_Init(GTSession* s)
 {
-  return close(c->conn);
+  s->ttl = GTServer_TimeToLive;
+  s->err = GTSessionError_None;
+  return 0;
 }
 
 int GTServer_Init(GTServer* svr)
 {
   svr->listenSize = 10;
-  svr->clientSize = 0;
   svr->sock = -1;
   return 0;
 }
@@ -118,8 +122,12 @@ int GTConnection_ParseRequestLine(GTConnection* c, GTStream* s)
   c->res->status = GTHttpStatus_Ok;
   GTStream_GetToken(s, buf, bufSize, " ");
   debug("request method: %s", buf);
-  if (strcmp(buf, "GET") == 0) {
+  if (strcmp(buf, "HEAD") == 0) {
+    c->req->method = GTHttpMethod_Head;
+  } else if (strcmp(buf, "GET") == 0) {
     c->req->method = GTHttpMethod_Get;
+  } else if (strcmp(buf, "POST") == 0) {
+    c->req->method = GTHttpMethod_Post;
   } else {
     c->res->status = GTHttpStatus_BadRequest;
     log_err("bad request");
@@ -197,9 +205,8 @@ int GTConnection_GetRequest(GTConnection* c)
   return GTConnection_ParseRequest(c, &stream);
 }
 
-int GTServer_Filter(GTServer* svr, char* s, const char* filter)
+int GTServer_Filter(char* s, const char* filter)
 {
-  (void) svr;
   int i;
   char* next = s;
   const int len = strlen(s);
@@ -212,7 +219,7 @@ int GTServer_Filter(GTServer* svr, char* s, const char* filter)
   return 0;
 }
 
-int GTServer_CleanUrl(GTServer* svr, char* url)
+int GTServer_CleanUrl(char* url)
 {
   static const char* f =
   "abcdefghijklmnopqrstuvwxyz"
@@ -224,7 +231,6 @@ int GTServer_CleanUrl(GTServer* svr, char* url)
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
   "0123456789"
   "-_";
-  (void) svr;
   char buf[GTServer_UrlSize];
   strncpy(buf, url, GTServer_UrlSize);
   memset(url, 0, GTServer_UrlSize);
@@ -239,43 +245,68 @@ int GTServer_CleanUrl(GTServer* svr, char* url)
     GTWriter_Write(&w, "index.html");
     return 0;
   }
-  GTServer_Filter(svr, tok, f);
+  GTServer_Filter(tok, f);
   GTWriter_Write(&w, "%s", tok);
   tok = GTLexer_GetToken(&l, "\0");
   if (!tok) { return 0; }
-  GTServer_Filter(svr, tok, g);
+  GTServer_Filter(tok, g);
   GTWriter_Write(&w, ".%s", tok);
   return 0;
 }
 
-int GTServer_HandleRequest(GTServer* svr, GTConnection* c)
+int GTSession_DoCommand(GTSession* s, GTNetCommand* nc)
+{
+  (void) s;
+  if (nc->type == GTNetCommandType_None) { 
+    log_err("no command type");
+
+    return -1;
+  } else if (nc->type == GTNetCommandType_Start) {
+
+  } else if (nc->type == GTNetCommandType_Game) {
+    if (GTGame_DoCommand(s->g, &nc->game) == -1) {
+      log_err("illegal command");
+
+    }
+
+  }
+  return 0;
+}
+
+int GTConnection_HandleRequest(GTConnection* c, GTSession* s)
 {
   if (c->res->status != GTHttpStatus_Ok) { return -1; }
-  if (strlen(c->req->body) && c->req->method == GTHttpMethod_Post) {
-    // handle body
-    (void)svr;
+  if (c->req->method == GTHttpMethod_Head) { return 0; }
+  if (c->req->method == GTHttpMethod_Post) {
+    GTNetCommand nc;
+    GTNetCommand_Init(&nc);
+    GTNetCommand_Parse(&nc, c->req->body);
+    GTSession_DoCommand(s, &nc);
+
+    c->res->contentLength = strlen(c->res->body);
     return 0;
   }
   if (c->req->method != GTHttpMethod_Get) { return 0; }
   debug("raw url is %s", c->req->url);
-  GTServer_CleanUrl(svr, c->req->url);
+  GTServer_CleanUrl(c->req->url);
   FILE* f = fopen(c->req->url, "r");
   if (f == NULL) {
-    c->res->status = GTHttpStatus_ServerError;
-    log_warn("could not open file %s", c->req->url);
+    c->res->status = GTHttpStatus_NotFound;
+    log_err("could not open file %s", c->req->url);
     return -1;
   }
-  GTStream s;
-  GTStream_InitFile(&s, f);
-  GTStream_Read(&s, c->res->body, GTServer_BodySize);
+  GTStream stream;
+  GTStream_InitFile(&stream, f);
+  GTStream_Read(&stream, c->res->body, GTServer_BodySize);
+  c->res->contentLength = strlen(c->res->body);
   return 0;
 }
 
 int GTConnection_WriteResponse(GTConnection* c, GTWriter* w)
 {
   GTWriter_Write(w, "HTTP/1.1 %d None\r\n", c->res->status);
-  // no header
-  GTWriter_Write(w, "\r\n\r\n");
+  GTWriter_Write(w, "Content-Length: %ld\r\n", c->res->contentLength);
+  GTWriter_Write(w, "\r\n");
   GTWriter_Write(w, "%s\r\n\r\n", c->res->body);
   return 0;
 }
@@ -288,6 +319,27 @@ int GTConnection_SendResponse(GTConnection* c)
   GTWriter_InitString(&w, buf, bufSize);
   GTConnection_WriteResponse(c, &w);
   write(c->conn, buf, strlen(buf));
+  return 0;
+}
+
+int GTConnection_HandleConnection(GTConnection* c)
+{
+  GTBoard b;
+  GTBoard_Init(&b);
+  GTGame g;
+  GTGame_Init(&g, &b);
+  GTSession s;
+  GTSession_Init(&s);
+  s.b = &b;
+  s.g = &g;
+  GTBoard_EndTurn(&b);
+  while (s.err == GTSessionError_None) {
+    // to do: set timeout for recv and check if connection is alive
+    // or alternatively, check ttl and close connection on timeout
+    GTConnection_GetRequest(c);
+    GTConnection_HandleRequest(c, &s);
+    GTConnection_SendResponse(c);
+  }
   return 0;
 }
 
@@ -320,10 +372,17 @@ int GTServer_Run(GTServer* svr)
     GTResponse_Init(&res);
     GTConnection_Init(&c, &req, &res);
     GTServer_Accept(svr, &c);
-    GTConnection_GetRequest(&c);
-    GTServer_HandleRequest(svr, &c);
-    GTConnection_SendResponse(&c);
-    GTConnection_Close(&c);
+    pid_t pid = fork();
+    if (pid == -1) {
+      log_err("fork failed");
+      continue;
+    } else if (pid == 0) {
+      close(svr->sock);
+      GTConnection_HandleConnection(&c);
+    } else{
+      close(c.conn);
+      continue;
+    }
   }
   return 0;
 }
