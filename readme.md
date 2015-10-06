@@ -5,44 +5,44 @@ A boardgame for two players.
 ## How to play
 
 ### Commands
-mv (pos) (dir) - for moving a unit
-pd (pos) (dir) (unit) - for producing a unit
-rg (pos) (dir) - for performing a ranged attack
-done - for ending your turn
-info - for displaying information about resources and population
-exit - end the game
+`mv` (pos) (dir) - for moving a unit
+`pd` (pos) (dir) (unit) - for producing a unit
+`rg` (pos) (dir) - for performing a ranged attack
+`done` - for ending your turn
+`info` - for displaying information about resources and population
+`exit` - end the game
 
 ### Indicating position
 Type the rank and file without spaces, e.g. c1.
 
 ### Indicating direction
-n - north
-e - east
-s - south
-w - west
-nn - two tiles north
-ne - north east
-ee - two tiles east
-se - south east
-ss - two tiles south
-sw - south west
-ww - two tiles west
-nw - north west
+`n` - north
+`e` - east
+`s` - south
+`w` - west
+`nn` - two tiles north
+`ne` - north east
+`ee` - two tiles east
+`se` - south east
+`ss` - two tiles south
+`sw` - south west
+`ww` - two tiles west
+`nw` - north west
 
 ### Units
-g or G - gatherer, who can produce other units
-a or A - archer, who can perform ranged attacks
-c or C - cavalryman, who can move twice per turn
-s or S - spearman, who can take more damage
-f or F - fortress
+`g` or `G` - gatherer, who can produce other units
+`a` or `A` - archer, who can perform ranged attacks
+`c` or `C` - cavalryman, who can move twice per turn
+`s` or `S` - spearman, who can take more damage
+`f` or `F` - fortress
 
 ### Resources
-W - wood, for producing an archer
-H - horse, for producing a cavalryman
-I - iron, for producing a spearman
-L - lake, for producing a fortress
-P - plain, just a plain plain
-M - mountain, which gets in the way of archers and cavalry
+`W` - wood, for producing an archer
+`H` - horse, for producing a cavalryman
+`I` - iron, for producing a spearman
+`L` - lake, for producing a fortress
+`P` - plain, just a plain plain
+`M` - mountain, which gets in the way of archers and cavalry
 
 ### Objective
 The objective is to destroy all of your opponent's gatherers.
