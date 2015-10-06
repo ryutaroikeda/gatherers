@@ -5,7 +5,7 @@
 #include "server.h"
 
 #define Test_CharGet(i) \
-static char Test_CharGet ## i(void) \
+static int Test_CharGet ## i(void) \
 {                                   \
   static char* ptr = input ## i;    \
   return *(ptr++);                  \

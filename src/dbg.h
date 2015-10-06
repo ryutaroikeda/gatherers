@@ -16,19 +16,19 @@
 #ifdef NDEBUG
 #define debug(...)
 #else
-//
-// ##__VA_ARGS__ is not portable. This is problematic when __VA_ARGS__ consists
-// of a format string with no argument. For example:
-//
-// #define debug(M, ...) \
-// fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, __VA_ARGS__)
-//
-// will not compile because there will be a trailing comma after '__LINE__'.
-// ##__VA_ARGS__ is designed to swallow the stray comma, but this feature is a
-// GNU extension.
-//
-// The workaround here is to use multiple printf statements.
-//
+/*
+ * ##__VA_ARGS__ is not portable. This is problematic when __VA_ARGS__ consists
+ * of a format string with no argument. For example:
+ *
+ * #define debug(M, ...) \
+ * fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, __VA_ARGS__)
+ *
+ * will not compile because there will be a trailing comma after '__LINE__'.
+ * ##__VA_ARGS__ is designed to swallow the stray comma, but this feature is a
+ * GNU extension.
+ *
+ * The workaround here is to use multiple printf statements.
+ */
 #define debug(...) \
 do { fprintf(stderr, "DEBUG %s:%d:%s ", __FILE__, __LINE__, __FUNC__); \
      fprintf(stderr, __VA_ARGS__); \

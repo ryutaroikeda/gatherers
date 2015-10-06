@@ -2,7 +2,7 @@
 #include "io.h"
 #include <stdio.h>
 
-char GTGetCharFromStdin(void)
+int GTGetCharFromStdin(void)
 {
   return getc(stdin);
 }
@@ -14,7 +14,7 @@ int GTGetLineExplicit(GTCharGetter getChar, char* buf, int size)
     return -1;
   }
   while (i < size) {
-    char c = (*getChar)();
+    int c = (*getChar)();
     if (c == EOF || c == '\0') {
       buf[i] = '\0';
       return -1;
@@ -22,7 +22,7 @@ int GTGetLineExplicit(GTCharGetter getChar, char* buf, int size)
       buf[i] = '\0';
       return 0;
     }
-    buf[i] = c;
+    buf[i] = (char)c;
     i++;
   }
   buf[i - 1] = '\0';

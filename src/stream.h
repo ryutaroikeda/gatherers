@@ -1,8 +1,6 @@
 #ifndef _GTSTREAM_H_
 #define _GTSTREAM_H_
 
-#include "util.h"
-
 #include <stdio.h>
 
 #define enum_type(t) typedef enum t t
@@ -10,7 +8,7 @@
 
 struct GTStream;
 
-typedef char (*GTSCharGetter)(struct GTStream*);
+typedef int (*GTSCharGetter)(struct GTStream*);
 
 // enum GTStreamMode
 // {
@@ -50,7 +48,7 @@ struct GTStream
 struct_type(GTStream);
 
 // for internal use only
-char GTStream_GetString(GTStream* s);
+int GTStream_GetString(GTStream* s);
 // for internal use only
 // char GTStream_GetFile(GTStream* s);
 // for internal use only
@@ -64,7 +62,7 @@ int GTStream_InitFile(GTStream* s, FILE* file);
 
 int GTStream_InitSocket(GTStream* s, int socket);
 
-char GTStream_Get(GTStream* s);
+int GTStream_Get(GTStream* s);
 
 int GTStream_Read(GTStream* s, char* buf, int size);
 

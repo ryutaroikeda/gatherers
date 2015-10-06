@@ -67,8 +67,9 @@ int GTSession_Init(GTSession* s)
   return 0;
 }
 
-int GTServer_Init(GTServer* svr)
+int GTServer_Init(GTServer* svr, in_port_t port)
 {
+  svr->port = port;
   svr->listenSize = 10;
   svr->sock = -1;
   return 0;
@@ -427,7 +428,7 @@ int GTServer_Run(GTServer* svr)
   if (err == -1) {
     return -1;
   }
-  in_port_t port = htons(80);
+  in_port_t port = htons(svr->port);
   struct in_addr addr = {
     .s_addr = htonl(INADDR_ANY)
   };

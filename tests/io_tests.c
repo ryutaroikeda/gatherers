@@ -3,7 +3,7 @@
 
 static char input[] = "hello world\nfarewell world\nthe end";
 
-static char getChar(void) {
+static int getChar(void) {
   static char* p = input;
   if (*p == '\0') { return '\0'; }
   return *(p++);

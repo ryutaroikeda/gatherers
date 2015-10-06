@@ -5,15 +5,15 @@ A boardgame for two players.
 ## How to play
 
 ### Commands
-`mv` (pos) (dir) - for moving a unit  </br>
-`pd` (pos) (dir) (unit) - for producing a unit  </br>
-`rg` (pos) (dir) - for performing a ranged attack  </br>
+`mv (pos) (dir)` - for moving a unit  </br>
+`pd (pos) (dir) (unit)` - for producing a unit  </br>
+`rg (pos) (dir)` - for performing a ranged attack  </br>
 `done` - for ending your turn  </br>
 `info` - for displaying information about resources and population  </br>
 `exit` - end the game  </br>
 
 ### Indicating position
-Type the rank and file without spaces, e.g. c1.
+Type the rank and file without spaces, e.g. `c1`.
 
 ### Indicating direction
 `n` - north  </br>

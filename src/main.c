@@ -3,16 +3,18 @@
 // #include "board.h"
 // #include "ai.h"
 #include "server.h"
+#include <stdlib.h>
 
 int main(int argc, char* argv[])
 {
-  (void)argc;
-  (void)argv;
-
+  if (argc < 2) {
+    fprintf(stdout, "Usage: gatherers <port>\n");
+    return -1;
+  }
+  long port = strtol(argv[1], NULL, 10);
   GTServer s;
-  (void)s;
-  GTServer_Init(&s);
-  s.listenSize = 1;
+  GTServer_Init(&s, port);
+  s.listenSize = 10;
   GTServer_Run(&s);
 
   // char file[] =

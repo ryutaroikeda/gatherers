@@ -1,6 +1,7 @@
 #ifndef _GTSERVER_H_
 #define _GTSERVER_H_
 
+#include <netinet/in.h>
 #define enum_type(t) typedef enum t t
 #define struct_type(t) typedef struct t t
 
@@ -116,12 +117,13 @@ struct_type(GTSession);
 int GTSession_Init(GTSession* s);
 
 struct GTServer {
+  in_port_t port;
   int listenSize;
   int sock;
 };
 struct_type(GTServer);
 
-int GTServer_Init(GTServer* svr);
+int GTServer_Init(GTServer* svr, in_port_t port);
 
 int GTServer_Filter(char* s, const char* f);
 
