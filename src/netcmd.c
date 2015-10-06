@@ -12,6 +12,7 @@ static char* protocol[GTNetCommandType_Size] =
 int GTNetCommand_Init(GTNetCommand* nc)
 {
   nc->type = GTNetCommandType_None;
+  GTCommand_Init(&nc->game);
   return 0;
 }
 

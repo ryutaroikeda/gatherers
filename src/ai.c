@@ -26,6 +26,8 @@ int GTAIMoves_Init(GTAIMoves* m)
 
 int GTAI_Init(GTAI* ai) 
 {
+  ai->p = GTPlayer_None;
+  ai->b = NULL;
   ai->err = GTAIError_None;
   return 0;
 }
@@ -117,5 +119,20 @@ int GTAI_Random(GTCommand* c)
   int unit = rand() % m.unitSize;
   int move = rand() % m.moveSize[unit];
   GTAIMove_ToCommand(&m.moves[unit][move], b, c);
+  return 0;
+}
+
+int GTAI_PlayRandom(GTAI* ai, GTCommand* c)
+{
+  GTAIMoves m;
+  GTAIMoves_Init(&m);
+  GTAIMoves_GenerateAll(&m, ai->b, ai->p);
+  if (m.unitSize == 0) {
+    c->cmd = GTCommandType_Done;
+    return 0;
+  }
+  int unit = rand() % m.unitSize;
+  int move = rand() % m.moveSize[unit];
+  GTAIMove_ToCommand(&m.moves[unit][move], ai->b, c);
   return 0;
 }

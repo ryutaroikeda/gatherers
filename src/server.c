@@ -1,4 +1,5 @@
 #include "dbg.h"
+#include "ai.h"
 #include "board.h"
 #include "game.h"
 #include "lexer.h"
@@ -24,6 +25,13 @@
 //   "Host",
 // };
 
+static const char* httpConn[GTHttpConnection_Size] =
+{
+  "",
+  "keep-alive",
+  "close"
+};
+
 int GTRequest_Init(GTRequest* req)
 {
   req->method = GTHttpMethod_None;
@@ -37,6 +45,8 @@ int GTRequest_Init(GTRequest* req)
 int GTResponse_Init(GTResponse* res)
 {
   res->status = GTHttpStatus_None;
+  res->contentLength = 0;
+  res->conn = GTHttpConnection_None;
   memset(res->body, 0, GTServer_BodySize);
   return 0;
 }
@@ -52,6 +62,7 @@ int GTSession_Init(GTSession* s)
 {
   // s->ttl = GTServer_TimeToLive;
   s->conn = -1;
+  s->isDone = 1;
   s->err = GTSessionError_None;
   return 0;
 }
@@ -259,9 +270,37 @@ int GTSession_DoCommand(GTSession* s, GTNetCommand* nc, GTWriter* w)
   } else if (nc->type == GTNetCommandType_Start) {
     log_info("command start");
   } else if (nc->type == GTNetCommandType_Game) {
-    if (GTGame_DoCommand(s->g, &nc->game, w) == -1) {
+    GTGame_DoCommand(s->g, &nc->game, w);
+    if (nc->game.err == GTCommandError_Illegal) {
+      GTWriter_Write(w, "Illegal move, try again\n");
       log_err("illegal command");
+      return -1;
+    } else if (nc->game.err == GTCommandError_Exit) {
+      s->isDone = 1;
+      GTWriter_Write(w, "player %d resigns\n", s->g->p);
+      log_info("player %d resigns\n", s->g->p);
+      return 0;
     }
+    GTGame_Print(s->g, w);
+    if (GTGame_IsEnd(s->g)) {
+      s->isDone = 1;
+      GTWriter_Write(w, "player %d wins\n", s->g->p);
+      log_info("player %d wins\n", s->g->p);
+    }
+  }
+  return 0;
+}
+
+int GTSession_HandleAI(GTSession* s, GTWriter* w)
+{
+  // check if it is the AI's turn and the game is not ended
+  while (s->ai->p == s->g->p && !s->isDone) {
+    GTNetCommand nc;
+    GTNetCommand_Init(&nc);
+    nc.type = GTNetCommandType_Game;
+    GTAI_PlayRandom(s->ai, &nc.game);
+    GTCommand_Write(&nc.game, w);
+    GTSession_DoCommand(s, &nc, w);
   }
   return 0;
 }
@@ -273,11 +312,16 @@ int GTSession_HandleRequest(GTSession* s, GTConnection* c)
   if (c->req->method == GTHttpMethod_Post) {
     GTNetCommand nc;
     GTNetCommand_Init(&nc);
-    GTNetCommand_Parse(&nc, c->req->body);
     GTWriter w;
     GTWriter_InitString(&w, c->res->body, GTServer_BodySize);
+    if (GTNetCommand_Parse(&nc, c->req->body) == -1) {
+      GTWriter_Write(&w, "Error parsing command\n");
+      log_err("error parsing command: %s", c->req->body);
+      c->res->contentLength = strlen(c->res->body);
+      return 0;
+    }
     GTSession_DoCommand(s, &nc, &w);
-    GTGame_Print(s->g, &w);
+    GTSession_HandleAI(s, &w);
     c->res->contentLength = strlen(c->res->body);
     return 0;
   }
@@ -304,6 +348,9 @@ int GTConnection_WriteResponse(GTConnection* c, GTWriter* w)
 {
   GTWriter_Write(w, "HTTP/1.1 %d None\r\n", c->res->status);
   GTWriter_Write(w, "Content-Length: %ld\r\n", c->res->contentLength);
+  if (c->res->conn != GTHttpConnection_None) {
+    GTWriter_Write(w, "Connection: %s\r\n", httpConn[c->res->conn]);
+  }
   GTWriter_Write(w, "\r\n");
   GTWriter_Write(w, "%s", c->res->body);
   return 0;
@@ -320,7 +367,7 @@ int GTSession_SendResponse(GTSession* s, GTConnection* c)
   return 0;
 }
 
-int GTSession_HandleConnection(GTSession* s)
+int GTSession_PrepareGame(GTSession* s, GTBoard* b, GTGame* g, GTAI* ai)
 {
   char file[] =
    "tiles {"
@@ -331,21 +378,33 @@ int GTSession_HandleConnection(GTSession* s)
   " h, m, w, h, p,"
   " w, i, h, m, w, }"
   "units {"
-  "--,--,g1,--,--,"
+  "--,--,G1,--,--,"
   "--,--,--,--,--,"
   "--,--,--,--,--,"
   "--,--,--,--,--,"
   "--,--,--,--,--,"
-  "--,--,G1,--,--, }";
+  "--,--,g1,--,--, }";
+  GTBoard_Init(b);
+  GTBoard_Parse(b, file);
+  GTGame_Init(g, b);
+  GTAI_Init(ai);
+  ai->p = GTPlayer_White;
+  ai->b = b;
+  s->b = b;
+  s->g = g;
+  s->ai = ai;
+  s->isDone = 0;
+  return 0;
+}
+
+int GTSession_HandleConnection(GTSession* s)
+{
   GTBoard b;
-  GTBoard_Init(&b);
-  GTBoard_Parse(&b, file);
   GTGame g;
-  GTGame_Init(&g, &b);
-  s->b = &b;
-  s->g = &g;
+  GTAI ai;
+  GTSession_PrepareGame(s, &b, &g, &ai); 
   GTBoard_EndTurn(&b);
-  while (s->err == GTSessionError_None) {
+  while (s->err == GTSessionError_None && !s->isDone) {
     GTRequest req;
     GTResponse res;
     GTConnection c;
@@ -356,6 +415,8 @@ int GTSession_HandleConnection(GTSession* s)
     GTSession_HandleRequest(s, &c);
     GTSession_SendResponse(s, &c);
   }
+  log_info("closing connection");
+  close(s->conn);
   return 0;
 }
 

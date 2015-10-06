@@ -51,15 +51,18 @@ int GTAIMoves_GenerateAll(GTAIMoves* m, const struct GTBoard* b, GTPlayer p);
 
 struct GTAI
 {
+  GTPlayer p;
   struct GTBoard* b;
   GTAIMoves* m;
   GTAIError err;
 };
 struct_type(GTAI);
 
-int GTAI_Init(GTAI *ai);
+int GTAI_Init(GTAI* ai);
 // plays random legal moves
 int GTAI_Random(GTCommand* c);
+
+int GTAI_PlayRandom(GTAI* ai, GTCommand* c);
 
 #undef enum_type
 #undef struct_type

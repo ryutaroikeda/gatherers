@@ -1,9 +1,13 @@
 
 /* style.css */
 
-* {
+/** {
 	padding: 0;
 	margin: auto;
+}*/
+
+code {
+	font-size: 14pt;
 }
 
 div[id="console"] {
@@ -15,8 +19,17 @@ div[id="console"] {
 	overflow: auto;
 }
 
-div[id="cmdline"] {
+div[id="cmdlinebox"] {
 	margin-left: auto;
 	margin-right: auto;
+}
+
+div[id="cmdline"] {
 	font-family: monospace;
+}
+
+div[id="man"] {
+	width: 60%;
+	margin-left: auto;
+	margin-right: auto;
 }

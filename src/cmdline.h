@@ -7,6 +7,8 @@
 #define enum_type(t) typedef enum t t
 #define struct_type(t) typedef struct t t
 
+struct GTWriter;
+
 // syntax of cmdmands
 //
 // Command = Move | Range | Produce | Stay | Done | Exit
@@ -76,6 +78,8 @@ int GTCommand_Parse(GTCommand* c, char* s);
 int GTCommand_Get(GTCommand* c, GTCharGetter g);
 // get command from stdin
 int GTCommand_GetStdin(GTCommand* c);
+
+int GTCommand_Write(GTCommand* c, struct GTWriter* w);
 
 #undef enum_type
 #undef struct_type

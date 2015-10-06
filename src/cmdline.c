@@ -1,6 +1,7 @@
 #include "dbg.h"
 #include "cmdline.h"
 #include "lexer.h"
+#include "writer.h"
 #include <string.h>
 
 static const char* cmd[GTCommandType_Size] =
@@ -153,4 +154,25 @@ int GTCommand_Get(GTCommand* c, GTCharGetter g)
 int GTCommand_GetStdin(GTCommand* c)
 {
   return GTCommand_Get(c, &GTGetCharFromStdin);
+}
+
+int GTCommand_Write(GTCommand* c, GTWriter* w)
+{
+  GTWriter_Write(w, "%s", cmd[c->cmd]);
+  if (isMetaCmd[c->cmd]) {
+    GTWriter_Write(w, "\n");
+    return 0;
+  }
+  GTWriter_Write(w, " %c%c", c->rank + 'a', c->file + '1');
+  if (c->cmd == GTCommandType_Stay) { 
+    GTWriter_Write(w, "\n");
+    return 0;
+  }
+  GTWriter_Write(w, " %s", dir[c->d]);
+  if (c->cmd != GTCommandType_Produce) {
+    GTWriter_Write(w, "\n");
+    return 0;
+  }
+  GTWriter_Write(w, " %s\n", unit[c->t]);
+  return 0;
 }

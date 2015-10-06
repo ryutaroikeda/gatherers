@@ -4,46 +4,40 @@
 "use strict";
 
 var HttpInterface = (function () {
-  var pingDelay = 10000;
-
+  var pingDelay = 15000;
   function isReady(http) {
     return http.readyState == 4;
   }
   var i = {};
+  i.send = function (method, url, f, msg) {
+    var http = new XMLHttpRequest();
+    http.open(method, url, true);
+    if (method === "POST") {
+      http.send(msg);
+    } else {
+      http.send();
+    }
+    http.onreadystatechange = function () {
+      if (isReady(http)) {
+        f(http);
+      }
+    }
+  }
+
   i.head = function (url, f) {
-    var http = new XMLHttpRequest();
-    http.open("HEAD", url, true);
-    http.send();
-    http.onreadystatechange = function () {
-      if (isReady(http)) {
-        f(http.responseText);
-      }
-    }
+    i.send("HEAD", url, f);
   }
+
   i.get = function (url, f) {
-    var http = new XMLHttpRequest();
-    http.open("GET", url, true);
-    http.send();
-    http.onreadystatechange = function () {
-      if (isReady(http)) {
-        f(http.responseText);
-      }
-    }
+    i.send("GET", url, f);
   }
+
   i.post = function (url, f, msg) {
-    var http = new XMLHttpRequest();
-    http.open("POST", url, true);
-    http.setRequestHeader("Content-type", "game");
-    http.send(msg);
-    http.onreadystatechange = function () {
-      if (isReady(http)) {
-        f(http.responseText);
-      }
-    }
+    i.send("POST", url, f, msg);
   }
-  
-  i.ping = function(url) {
-    i.head(url, (function(text){}));
+
+  i.ping = function() {
+    i.head("/", (function (http) {}));
   }
 
   i.keepAliveId = setInterval(i.ping, pingDelay);
@@ -58,23 +52,29 @@ var Gatherers = (function () {
   g.console = document.getElementById("consoleTxt");
   g.cmdline = document.getElementById("cmdline");
 
-  g.consoleTxt = "Welcome to Gatherers.";
+  g.consoleTxt = "Welcome to Gatherers.\nType info to begin.\n";
 
   g.command = "";
-
-  g.receive = function (msg) {
-    g.consoleTxt += msg;
-    g.update();
-  }
-
-  g.send = function () {
-    HttpInterface.post("/", g.receive, "game: " + g.command);
-  }
 
   g.update = function() {
     g.console.innerHTML = g.consoleTxt;
     g.consoleBox.scrollTop = g.consoleBox.scrollHeight;
-    g.cmdline.innerHTML = g.command;
+    if (g.command) {
+      g.cmdline.innerHTML = g.command;
+    } else {
+      g.cmdline.innerHTML = "Enter command:";
+    }
+  }
+
+  g.receive = function (http) {
+    g.consoleTxt += http.responseText;
+    g.update();
+  }
+
+  g.send = function (cmd) {
+    g.consoleTxt += g.command + "\n";
+    HttpInterface.post("/", g.receive, "game: " + cmd);
+    g.update();
   }
 
   return g;
@@ -90,8 +90,19 @@ var Gatherers = (function () {
       Gatherers.command = Gatherers.command.slice(0, -1);
       evt.preventDefault();
     } else {
-      Gatherers.command += String.fromCharCode(key);
+      var chr = String.fromCharCode(key);
+      if ("abcdefghijklmnopqrstuvwxyz0123456789".indexOf(chr) > -1) {
+        Gatherers.command += String.fromCharCode(key);
+      } else if (chr === " ") {
+        Gatherers.command += " ";
+        evt.preventDefault();
+      }
     }
     Gatherers.update();
   }
+
+  window.onbeforeunload = function (evt) {
+    // Gatherers.send("exit");
+  }
+
 }());

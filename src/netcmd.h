@@ -6,6 +6,8 @@
 #define enum_type(t) typedef enum t t
 #define struct_type(t) typedef struct t t
 
+struct GTWriter;
+
 // enum {
   // GTNetCommand_CommandSize 
 // };
@@ -28,6 +30,7 @@ int GTNetCommand_Init(GTNetCommand* nc);
 
 int GTNetCommand_Parse(GTNetCommand* nc, char* s);
 
+int GTNetCommand_Write(GTNetCommand* nc, struct GTWriter* w);
 #undef enum_type
 #undef struct_type
 

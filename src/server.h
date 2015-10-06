@@ -4,6 +4,7 @@
 #define enum_type(t) typedef enum t t
 #define struct_type(t) typedef struct t t
 
+struct GTAI;
 struct GTBoard;
 struct GTGame;
 struct GTStream;
@@ -37,6 +38,14 @@ enum GTHttpStatus
 };
 enum_type(GTHttpStatus);
 
+enum GTHttpConnection {
+  GTHttpConnection_None,
+  GTHttpConnection_KeepAlive,
+  GTHttpConnection_Close,
+  GTHttpConnection_Size
+};
+enum_type(GTHttpConnection);
+
 enum GTHttpHeader
 {
   GTHttpHeader_None,
@@ -68,6 +77,7 @@ struct GTResponse
 {
   GTHttpStatus status;
   long int contentLength;
+  GTHttpConnection conn;
   char body[GTServer_BodySize];
 };
 struct_type(GTResponse);
@@ -94,9 +104,11 @@ enum_type(GTSessionError);
 
 struct GTSession {
   int conn;
+  int isDone;
   // long ttl;
   struct GTBoard* b;
   struct GTGame* g;
+  struct GTAI* ai;
   GTSessionError err;
 };
 struct_type(GTSession);

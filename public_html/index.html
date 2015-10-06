@@ -8,11 +8,86 @@
 <body>
 	<div id="console" disabled style="height:540px;width:480px;
 	border:1px solid #ccc; overflow:auto; font-size:14pt"><pre id="consoleTxt">
-Welcome to Gatherers.</pre>
+Welcome to Gatherers.
+Type info to begin.
+</pre>
 	</div>
 	
-	<div id="cmdline" disabled style="width:480px; font-size:14pt">
-	Enter Command:
+	<div id="cmdlinebox" disabled style="width:480px">
+		<pre id="cmdline" style="widthL480px; font-size:14pt">Enter Command:</pre>
+	</div>
+	<div id="man">
+		<h1>How to play Gatherers</h1>
+		<h2>Commands </h2>
+<code>mv (pos) (dir)</code> - for moving a unit</br>
+<code>pd (pos) (dir) (unit)</code> - for producing a unit</br>
+<code>rg (pos) (dir)</code> - for performing a ranged attack</br>
+<code>done</code> - for ending your turn</br>
+<code>info</code> - for displaying information about resources and population</br>
+<code>exit</code> - end the game</br>
+<h2>Indicating position</h2>
+<p>
+Type the rank and file without spaces, e.g. c1.
+</p>
+<h2>Indicating direction</h2>
+<code>n</code> - north</br>
+<code>e</code> - east</br>
+<code>s</code> - south</br>
+<code>w</code> - west</br>
+<code>nn</code> - two tiles north</br>
+<code>ne</code> - north east</br>
+<code>ee</code> - two tiles east</br>
+<code>se</code> - south east</br>
+<code>ss</code> - two tiles south</br>
+<code>sw</code> - south west</br>
+<code>ww</code> - two tiles west</br>
+<code>nw</code> - north west</br>
+
+<h2>Types of units</h2>
+<code>g</code> or <code>G</code> - gatherer, who can produce other units</br>
+<code>a</code> or <code>A</code> - archer, who can perform ranged attacks</br>
+<code>c</code> or <code>C</code> - cavalryman, who can move twice per turn</br>
+<code>s</code> or <code>S</code> - spearman, who can take more damage</br>
+<code>f</code> or <code>F</code> - fortress</br>
+
+<h2>Types of resources</h2>
+<code>W</code> - wood, for producing an archer</br>
+<code>H</code> - horse, for producing a cavalryman</br>
+<code>I</code> - iron, for producing a spearman</br>
+<code>L</code> - lake, for producing a fortress</br>
+<code>P</code> - plain, just a plain plain</br>
+<code>M</code> - mountain, which gets in the way of archers and cavalry</br>
+
+<h2>Objective</h2>
+<p>
+The objective is to destroy all of your opponent's gatherers.
+</p>
+<h2>Reading the board</h2>
+<p>
+The board is a five-by-six grid of tiles. Each tile can hold at most one unit. If there is a unit on a tile, it will be displayed as something like 's3', which is a spearman. The number after the letter is the amount of damage that unit can take before being destroyed. Lower-case and upper-case letters are used to indicate ownership of the unit by the first and second player, respectively.
+</p>
+<h2>Moving Units</h2>
+<p>
+On your turn, you can issue commands to all of your units. You can issue at most one command to each unit per turn (except for cavalrymen). You can move a unit by typing, for example 'mv c1 n'. This will move your unit at position d1 north, to 'd2'. You can move your units north, east, south, or west, but not diagonally. You can attack enemy units with your cavalry and spearmen by attempting to move them to a tile occupied by an enemy unit.
+</p>
+<h2>Resources and producing units</h2>
+<p>
+Each tile has a resource (see Types of Resources above). You can look at the resources on the board by entering 'info'. You can only see resources on tiles that have been revealed - a tile is revealed when a unit moves on it. You acquire resources by moving one of your gatherers on a resource tile. Then, your gatherer can produce a unit associated with the resource. For example, a gatherer placed on W (wood) can produce an archer. However, you must be occupying more of the resource for that unit than there are units of that type. For example, if you have two wood and two archers on the board, you cannot create another archer until you acquire more wood or an archer is destroyed. 
+</p><p>
+You can issue a produce command by typing, for example, 'pd c1 n a', which means "produce, with the gatherer at c1, an archer on c2 (north of c1)".
+</p>
+<h2>Producing gatherers</h2>
+<p>
+The gatherer is a special unit that does not require resources to be produced. A gatherer on any tile can produce a gatherer. However, on the turn that you produce a gatherer, you cannot produce any other unit.
+</p>
+<h2>Ranged attack</h2>
+<p>
+Archers can perform a ranged attack on enemy units up to two tiles away. To perform a ranged attack, type, for example, 'rg b2 nn' to attack the unit on tile b4 with your archer on b2. 
+</p>
+<h2>Mountains</h2>
+<p>
+A cavalryman must stop moving if it lands on a mountain tile. An archer cannot perform a ranged attack over mountains. If the ranged attack is over an unrevealed tile, that tile is revealed. If it is a mountain, the ranged attack fails.
+</p>
 	</div>
 	<script src="gatherers-c.js"></script>
 
