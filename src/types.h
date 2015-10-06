@@ -7,7 +7,7 @@
 enum GTTileType
 {
   GTTileType_None,
-  GTTileType_Plains,
+  GTTileType_Plain,
   GTTileType_Wood,
   GTTileType_Horse,
   GTTileType_Iron,

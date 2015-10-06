@@ -43,6 +43,23 @@ struct GTAIMoves
 };
 struct_type(GTAIMoves);
 
+enum GTAIThreatType {
+  GTAIThreatType_None,
+  GTAIThreatType_Plain,
+  GTAIThreatType_Wood,
+  GTAIThreatType_Horse,
+  GTAIThreatType_Iron,
+  GTAIThreatType_Lake,
+  GTAIThreatType_Mountain,
+  GTAIThreatType_Gatherer,
+  GTAIThreatType_Archer,
+  GTAIThreatType_Cavalry,
+  GTAIThreatType_Spearman,
+  GTAIThreatType_Fortress,
+  GTAIThreatType_Size
+};
+enum_type(GTAIThreatType);
+
 int GTAIMoves_Init(GTAIMoves* m);
 // generate legal moves for unit
 int GTAIMoves_Generate(GTAIMoves* m, const struct GTBoard* b, int unit);
@@ -61,6 +78,8 @@ struct_type(GTAI);
 int GTAI_Init(GTAI* ai);
 // plays random legal moves
 int GTAI_Random(GTCommand* c);
+
+int GTAI_TryScorePlayer(GTCommand* c);
 
 int GTAI_PlayRandom(GTAI* ai, GTCommand* c);
 

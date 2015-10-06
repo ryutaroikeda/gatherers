@@ -45,6 +45,11 @@ enum GTBoardFileToken
 };
 enum_type(GTBoardFileToken);
 
+struct GTBoardConfig {
+  int frequency[GTTileType_Size];
+};
+struct_type(GTBoardConfig);
+
 enum
 {
   GTBoard_Width = 5,
@@ -156,6 +161,8 @@ int GTBoard_Print(const GTBoard* b, struct GTWriter* w);
 int GTBoard_PrintTiles(const GTBoard* b, struct GTWriter* w);
 
 int GTBoard_PrintDemographics(const GTBoard* b, struct GTWriter* w);
+
+int GTBoard_Generate(GTBoard* b, const GTBoardConfig* conf);
 
 #undef enum_type
 #undef struct_type

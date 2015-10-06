@@ -329,7 +329,7 @@ static char* Test_GTBoard_Range()
     "range should not error even with mountain");
   mu_assert(GTBoard_IsUnit(&b, easteast), "mountain ignored");
   mu_assert(b.tiles[east].isRevealed, "mountain not revealed");
-  b.tiles[east].type = GTTileType_Plains;
+  b.tiles[east].type = GTTileType_Plain;
   GTBoard_ResetUnitMovement(&b, 0);
   mu_assert(GTBoard_Range(&b, 0, GTDirection_EastEast) == 0, "range failed");
   mu_assert(GTBoard_IsEmpty(&b, easteast), "board not empty");
@@ -466,7 +466,7 @@ static char* Test_GTBoard_ParseTiles()
   pos = GTDirection_Pos(pos, GTDirection_SouthEast);
   mu_assert(b.tiles[pos].type == GTTileType_Horse, ".tiles wrong");
   pos = GTDirection_Pos(pos, GTDirection_SouthEast);
-  mu_assert(b.tiles[pos].type == GTTileType_Plains, ".tiles wrong");
+  mu_assert(b.tiles[pos].type == GTTileType_Plain, ".tiles wrong");
   pos = GTDirection_Pos(pos, GTDirection_South);
   mu_assert(b.tiles[pos].type == GTTileType_Wood, ".tiles wrong");
   return NULL;

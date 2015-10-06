@@ -2,6 +2,7 @@
 #include "board.h"
 #include "lexer.h"
 #include "writer.h"
+#include "stdlib.h"
 #include <string.h>
 
 static const GTUnitType tileProduct[GTTileType_Size] =
@@ -613,5 +614,30 @@ int GTBoard_PrintDemographics(const GTBoard* b, GTWriter* w)
     }
   }
   GTWriter_Write(w, "\n");
+  return 0;
+}
+
+int GTBoard_Generate(GTBoard* b, const GTBoardConfig* conf)
+{
+  int i, j;
+  int r = 0;
+  int sum = 0;
+  for (i = 1; i < GTTileType_Size; i++) {
+    sum += conf->frequency[i];
+  }
+  for (i = GTBoard_Height - 1; i >= 0; i--) {
+    for (j = 0; j < GTBoard_Width; j++) {
+      int pos = GTBoard_Pos(j, i);
+      r += rand() % sum;
+      r %= sum;
+      int k = 0, s = 0;
+      while (k < GTTileType_Size) {
+        s += conf->frequency[k];
+        if (r < s) { break; }
+        k++;
+      }
+      b->tiles[pos].type = k;
+    }
+  }
   return 0;
 }
