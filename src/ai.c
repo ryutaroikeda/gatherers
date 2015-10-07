@@ -54,6 +54,66 @@ int GTAIMoves_Init(GTAIMoves* m)
 int GTAIThreats_Init(GTAIThreats* t)
 {
   memset(t->threat, 0, sizeof(int) * GTBoard_Size);
+  t->count = 0;
+  return 0;
+}
+
+int GTAIThreats_AddThreat(GTAIThreats* t,const GTBoard* b, int pos)
+{
+  if (!GTBoard_IsValid(b, pos)) { return -1; }
+  t->threat[pos]++;
+  t->count++;
+  return 0;
+}
+
+int GTAIThreats_Count(GTAIThreats* t, const GTBoard* b, const GTUnit* u)
+{
+  int dir;
+  if (u->type == GTUnitType_Gatherer) {
+    return 0;
+  }
+  for (dir = GTDirection_North; dir <= GTDirection_West; dir++) {
+    int pos = GTDirection_Pos(u->pos, dir);
+    GTAIThreats_AddThreat(t, b, pos);
+  }
+  if (u->type == GTUnitType_Archer || u->type == GTUnitType_Cavalry) {
+    for (dir = GTDirection_NorthNorth; dir <= GTDirection_WestWest; dir++) {
+      /* if northnorth then north, etc. */
+      int minidir = dir - 4;
+      int btw = GTDirection_Pos(u->pos, minidir);
+      if (b->tiles[btw].isRevealed &&
+       b->tiles[btw].type == GTTileType_Mountain) {
+        continue;
+      }
+      int pos = GTDirection_Pos(u->pos, dir);
+      GTAIThreats_AddThreat(t, b, pos);
+    }
+  }
+  if (u->type == GTUnitType_Archer) {
+    for (dir = GTDirection_NorthEast; dir < GTDirection_Size; dir++) {
+      int pos = GTDirection_Pos(u->pos, dir);
+      GTAIThreats_AddThreat(t, b, pos);
+    }
+  }
+  /* Do this later
+  if (u->type == GTUnitType_Cavalry) {
+    for (dir = GTDirection_NorthEast; dir < GTDirection_Size; dir++) {
+      
+    }
+  }
+  */
+  return 0;
+}
+
+int GTAIThreats_CountAll(GTAIThreats* t, const GTBoard* b, GTPlayer p)
+{
+  int i;
+  for (i = GTBoard_ValidMin; i < GTBoard_InvalidMin; i++) {
+    if (!GTBoard_IsUnit(b, i)) { continue; }
+    const GTUnit* u = &b->units[b->board[i]];
+    if (u->color != p) { continue; }
+    GTAIThreats_Count(t, b, u);
+  }
   return 0;
 }
 
@@ -130,64 +190,9 @@ int GTAIMoves_GenerateAll(GTAIMoves* m, const GTBoard* b, GTPlayer p)
   return 0;
 }
 
-int
-GTAI_ComputeThreat(GTAI* ai, const GTBoard* b, GTAIThreats* t, const GTUnit* u)
-{
-  (void) ai;
-  int dir;
-  if (u->type == GTUnitType_Gatherer) {
-    return 0;
-  } 
-  for (dir = GTDirection_North; dir <= GTDirection_West; dir++) {
-    int pos = GTDirection_Pos(u->pos, dir);
-    t->threat[pos] += 1;
-  }
-  if (u->type == GTUnitType_Archer || u->type == GTUnitType_Cavalry) {
-    for (dir = GTDirection_NorthNorth; dir <= GTDirection_WestWest; dir++) {
-      /* if northnorth then north, etc. */
-      int minidir = dir - 4;
-      int btw = GTDirection_Pos(u->pos, minidir);
-      if (b->tiles[btw].isRevealed &&
-       b->tiles[btw].type == GTTileType_Mountain) {
-        continue;
-      }
-      int pos = GTDirection_Pos(u->pos, dir);
-      t->threat[pos] += 1;
-    }
-  }
-  if (u->type == GTUnitType_Archer) {
-    for (dir = GTDirection_NorthEast; dir < GTDirection_Size; dir++) {
-      int pos = GTDirection_Pos(u->pos, dir);
-      t->threat[pos] += 1;
-    }
-  }
-  /* Do this later
-  if (u->type == GTUnitType_Cavalry) {
-    for (dir = GTDirection_NorthEast; dir < GTDirection_Size; dir++) {
-      
-    }
-  }
-  */
-  return 0;
-}
-
-int GTAI_ComputeThreats(GTAI* ai, const GTBoard* b, GTAIThreats* t, GTPlayer p)
-{
-  (void) ai;
-  int i;
-  for (i = GTBoard_ValidMin; i < GTBoard_InvalidMin; i++) {
-    if (!GTBoard_IsUnit(b, i)) { continue; }
-    const GTUnit* u = &b->units[b->board[i]];
-    if (u->color != p) { continue; }
-    GTAI_ComputeThreat(ai, b, t, u);
-  }
-  return 0;
-}
-
 float
-GTAI_ScoreThreats(GTAI* ai, const GTBoard* b, const GTAIThreats* t, GTPlayer p)
+GTAI_ScoreThreats(const GTBoard* b, const GTAIThreats* t, GTPlayer p)
 {
-  (void) ai;
   int i;
   float score = 0.0f;
   GTPlayer enemy = (p == GTPlayer_Black ? GTPlayer_White : GTPlayer_Black);
@@ -197,19 +202,21 @@ GTAI_ScoreThreats(GTAI* ai, const GTBoard* b, const GTAIThreats* t, GTPlayer p)
       score += 2.0f;
     } else if (GTBoard_IsUnit(b, i)) {
       const GTUnit* u = &b->units[b->board[i]];
-      if (u->color != enemy) { continue; }
-      score += 4.0f;
-      if (u->life <= t->threat[i]) {
+      if (u->color == enemy) {
         score += 4.0f;
+        if (u->life <= t->threat[i]) {
+          score += 4.0f;
+        }
+      } else {
+        score += 2.0f;
       }
     }
   }
   return score;
 }
 
-int GTAI_CopyBoard(GTAI* ai, GTBoard* dst, const GTBoard* src)
+int GTAI_CopyBoard(GTBoard* dst, const GTBoard* src)
 {
-  (void) ai;
   memcpy(dst->units, src->units, sizeof(int) * GTBoard_UnitSize);
   memcpy(dst->board, src->board, sizeof(int) * GTBoard_Size);
   memcpy(dst->population, src->population,
@@ -225,9 +232,8 @@ int GTAI_CopyBoard(GTAI* ai, GTBoard* dst, const GTBoard* src)
   return 0;
 }
 
-float GTAI_ScoreUnits(GTAI* ai, const GTBoard* b, GTPlayer p)
+float GTAI_ScoreUnits(const GTBoard* b, GTPlayer p)
 {
-  (void) ai;
   float score = 0.0f;
   /*
   int rank, file;
@@ -248,9 +254,8 @@ float GTAI_ScoreUnits(GTAI* ai, const GTBoard* b, GTPlayer p)
   return score;
 }
 
-float GTAI_ScoreResources(GTAI* ai, const GTBoard* b, GTPlayer p)
+float GTAI_ScoreResources(const GTBoard* b, GTPlayer p)
 {
-  (void) ai;
   float score = 0.0f;
   int i;
   for (i = 0; i < GTTileType_Size; i++) {
@@ -264,36 +269,8 @@ float GTAI_ScoreResources(GTAI* ai, const GTBoard* b, GTPlayer p)
   return score;
 }
 
-// int GTAI_ScoreThreat(GTAI* ai, const GTBoard* b, const GTUnit* u)
-// {
-//   int score = 0;
-//   if (u->type == GTUnitType_Gatherer) { return score; }
-// (void) b;
-// (void) u;
-// (void)ai;
-//   return score;
-// }
-
-// int GTAI_ScoreThreats(GTAI* ai, const GTBoard* b, GTPlayer p)
-// {
-//   (void) ai;
-//   int score = 0;
-//   int rank, file;
-//   for (file = GTBoard_Height - 1; file >= 0; file--) {
-//     for (rank = 0; rank < GTBoard_Width; rank++) {
-//       int pos = GTBoard_Pos(rank, file);
-//       if (!GTBoard_IsUnit(b, pos)) { continue; }
-//       const GTUnit* u = &b->units[b->board[pos]];
-//       if (u->color != p) { continue; }
-//       score += GTAI_ScoreThreat(ai, b, u);
-//     }
-//   }
-//   return score;
-// }
-
-int GTAI_DoMove(GTAI* ai, GTBoard* b, const GTAIMove* m)
+int GTAI_DoMove(GTBoard* b, const GTAIMove* m)
 {
-  (void) ai;
   if (m->cmd == GTCommandType_Stay) {
     GTBoard_Stay(b, m->unit);
   } else if (m->cmd == GTCommandType_Move) {
@@ -306,18 +283,21 @@ int GTAI_DoMove(GTAI* ai, GTBoard* b, const GTAIMove* m)
   return 0;
 }
 
-float GTAI_ScoreMove(GTAI* ai, GTBoard* b, const GTAIMove* m,
- const GTAIThreats* self, const GTAIThreats* foe)
+float GTAI_ScoreMove(GTPlayer p, GTBoard* b, const GTAIMove* m)
 {
-  (void) ai;
   float score = 0.0f;
-  float wUnit = 0.5f, wResource = 1.0f, wThreats = 1.2f;
-  GTAI_DoMove(ai, b, m);
-  score += wUnit * GTAI_ScoreUnits(ai, b, ai->p);
-  score += wResource * GTAI_ScoreResources(ai, b, ai->p);
-  score += wThreats * GTAI_ScoreThreats(ai, b, self, ai->p);
-  GTPlayer enemy = (ai->p == GTPlayer_Black ? GTPlayer_White : GTPlayer_Black);
-  score -= wThreats * GTAI_ScoreThreats(ai, b, foe, enemy);
+  float wUnit = 0.5f, wResource = 1.0f, wThreats = 2.0f;
+  GTAI_DoMove(b, m);
+  GTPlayer enemy = (p == GTPlayer_Black ? GTPlayer_White : GTPlayer_Black);
+  GTAIThreats self, foe;
+  GTAIThreats_Init(&self);
+  GTAIThreats_Init(&foe);
+  GTAIThreats_CountAll(&self, b, p);
+  GTAIThreats_CountAll(&foe, b, enemy);
+  score += wUnit * GTAI_ScoreUnits(b, p);
+  score += wResource * GTAI_ScoreResources(b, p);
+  score += wThreats * GTAI_ScoreThreats(b, &self, p);
+  score -= wThreats * GTAI_ScoreThreats(b, &foe, enemy);
   GTBoard_UndoPlay(b);
   return score;
 }
@@ -362,7 +342,6 @@ int GTAI_TryScorePlayer(GTCommand* c)
   log_info("computing move");
   GTWriter w;
   GTWriter_InitFile(&w, stdout);
-  GTPlayer enemy = ai.p == GTPlayer_Black ? GTPlayer_White : GTPlayer_Black;
   GTAIMoves m;
   GTAIMoves_Init(&m);
   GTAIMoves_GenerateAll(&m, ai.b, ai.p);
@@ -372,12 +351,7 @@ int GTAI_TryScorePlayer(GTCommand* c)
   }
   GTBoard brd;
   GTBoard_Init(&brd);
-  GTAI_CopyBoard(&ai, &brd, ai.b);
-  GTAIThreats self, foe;
-  GTAIThreats_Init(&self);
-  GTAIThreats_Init(&foe);
-  GTAI_ComputeThreats(&ai, &brd, &self, ai.p);
-  GTAI_ComputeThreats(&ai, &brd, &foe, enemy);
+  GTAI_CopyBoard(&brd, ai.b);
   int i, j;
   float bestScore = - FLT_MAX;
   GTAIMove* best = &m.moves[0][0];
@@ -387,7 +361,7 @@ int GTAI_TryScorePlayer(GTCommand* c)
       /* for debugging */
       GTCommand cmd;
       GTAIMove_ToCommand(move, ai.b, &cmd);
-      float score = GTAI_ScoreMove(&ai, &brd, move, &self, &foe);
+      float score = GTAI_ScoreMove(ai.p, &brd, move);
       GTWriter_Write(&w, "%f: ", score);
       GTCommand_Write(&cmd, &w);
       if (score >= bestScore) {

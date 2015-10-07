@@ -23,6 +23,13 @@ int main(int argc, char* argv[])
   }
   if (strcmp(argv[1], "cmdline") == 0) {
     char file[] =
+    "tiles {"
+    " w, m, i, h, w,"
+    " p, h, w, m, h,"
+    " m, i, p, m, i,"
+    " i, m, p, i, m,"
+    " h, m, w, h, p,"
+    " w, h, i, m, w, }"
     "units {"
     "--,--,G1,--,--,"
     "--,--,--,--,--,"
@@ -30,12 +37,12 @@ int main(int argc, char* argv[])
     "--,--,--,--,--,"
     "--,--,--,--,--,"
     "--,--,g1,--,--,}";
-    int f[] = { 0, 400, 600, 600, 550, 250, 600 };
-    GTBoardConfig conf;
-    memcpy(conf.frequency, f, sizeof(int) * 7);
+    // int f[] = { 0, 400, 600, 600, 550, 250, 600 };
+    // GTBoardConfig conf;
+    // memcpy(conf.frequency, f, sizeof(int) * 7);
     GTBoard b;
     GTBoard_Init(&b);
-    GTBoard_Generate(&b, &conf);
+    // GTBoard_Generate(&b, &conf);
     GTBoard_Parse(&b, file);
     GTGame g;
     GTGame_Init(&g, &b);

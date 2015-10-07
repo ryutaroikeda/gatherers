@@ -77,6 +77,7 @@ int GTCommand_ParsePos(GTCommand* c, const char* tok)
 int GTCommand_ParseCmd(GTCommand* c, const char* tok)
 {
   int i;
+  if (!tok) { return -1; }
   for (i = GTCommandType_None; i < GTCommandType_Size; i++) {
     if (strcmp(cmd[i], tok) == 0) {
       c->cmd = i;
@@ -89,6 +90,7 @@ int GTCommand_ParseCmd(GTCommand* c, const char* tok)
 int GTCommand_ParseUnit(GTCommand* c, const char* tok)
 {
   int i;
+  if (!tok) { return -1; }
   for (i = GTUnitType_Gatherer; i < GTUnitType_Size; i++) {
     if (strcmp(unit[i], tok) == 0) {
       c->t = i;
@@ -101,6 +103,7 @@ int GTCommand_ParseUnit(GTCommand* c, const char* tok)
 int GTCommand_ParseDir(GTCommand* c, const char* tok)
 {
   int i;
+  if (!tok) { return -1; }
   for (i = GTDirection_North; i < GTDirection_Size; i++) {
     if (strcmp(dir[i], tok) == 0) {
       c->d = i;

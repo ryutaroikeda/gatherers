@@ -67,10 +67,15 @@ int GTAIMoves_GenerateAll(GTAIMoves* m, const struct GTBoard* b, GTPlayer p);
 
 struct GTAIThreats {
   int threat[GTBoard_Size];
+  int count;
 };
 struct_type(GTAIThreats);
 
 int GTAIThreats_Init(GTAIThreats* t);
+
+int GTAIThreats_Count(GTAIThreats* t, const GTBoard* b, const GTUnit* u);
+
+int GTAIThreats_CountAll(GTAIThreats* t, const GTBoard* b, GTPlayer p);
 
 struct GTAI
 {

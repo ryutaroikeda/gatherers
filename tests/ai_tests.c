@@ -88,12 +88,43 @@ static char* Test_GTAIMoves_GenerateAll()
   return NULL;
 }
 
+static char* Test_GTAIThreats_Count()
+{
+  char file[] =
+  "tiles {"
+  "p,p,p,p,p,"
+  "p,p,p,p,p,"
+  "p,p,p,p,p,"
+  "p,p,p,p,p,"
+  "p,p,p,p,p,"
+  "p,p,p,p,p,}"
+  "units {"
+  "--,--,--,--,--,"
+  "--,--,--,--,--,"
+  "--,--,--,--,--,"
+  "--,--,a1,--,--,"
+  "--,--,--,--,--,"
+  "--,--,--,S2,--,}";
+  GTBoard b;
+  GTBoard_Init(&b);
+  GTBoard_Parse(&b, file);
+  GTAIThreats t;
+  GTAIThreats_Init(&t);
+  GTAIThreats_Count(&t, &b, &b.units[0]);
+  mu_assert(t.count == 12, ".count wrong");
+  GTAIThreats_Init(&t);
+  GTAIThreats_Count(&t, &b, &b.units[1]);
+  mu_assert(t.count == 3, ".count wrong");
+  return NULL;
+}
+
 static char* Test_All()
 {
   mu_suite_start();
   mu_run_test(Test_GTAIMove_ToCommand);
   mu_run_test(Test_GTAIMoves_Generate);
   mu_run_test(Test_GTAIMoves_GenerateAll);
+  mu_run_test(Test_GTAIThreats_Count);
   return NULL;
 }
 
