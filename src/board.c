@@ -96,7 +96,6 @@ static const char* fileTokens[GTBoardFileToken_Size] =
 int GTBoard_Init(GTBoard* b)
 {
   memset(b->tiles, 0, sizeof(GTTile) * GTBoard_Size);
-  memset(b->board, GTBoard_Empty, sizeof(int) * GTBoard_Size);
   memset(b->entries, 0, sizeof(GTStackEntry) * GTBoard_StackSize);
   GTStack_Init(&b->stack, b->entries, GTBoard_StackSize);
   memset(b->population[0], 0, sizeof(int) * GTPlayer_Size * GTUnitType_Size);
@@ -107,15 +106,16 @@ int GTBoard_Init(GTBoard* b)
   b->turn = 0;
   b->err = GTBoardError_None;
   int i;
-  for(i = 0; i < GTBoard_ValidMin; i++) {
+  for (i = 0; i < GTBoard_Size; i++) {
     b->board[i] = GTBoard_Invalid;
   }
-  for(i = GTBoard_InvalidMin; i < GTBoard_Size; i++) { 
-    b->board[i] = GTBoard_Invalid;
-  }
-  for(i = 0; i < GTBoard_HeightMax; i++) {
-    b->board[i * GTBoard_WidthMax] = GTBoard_Invalid;
-    b->board[(i+1) * GTBoard_WidthMax - 1] = GTBoard_Invalid;
+  int rank, file;
+  for (file = GTBoard_Height - 1; file >= 0; file--) {
+    for (rank = 0; rank < GTBoard_Width; rank++) {
+      int pos = GTBoard_Pos(rank, file);
+      if (pos == GTBoard_InvalidMin) { log_err("invalidmin!"); }
+      b->board[pos] = GTBoard_Empty;
+    }
   }
   return 0;
 }

@@ -71,7 +71,7 @@ A cavalryman must stop moving if it lands on a mountain tile. An archer cannot p
 * <del>server</del>
 * <del>client javascript</del>
 * <del>user manual</del>
-* board tile randomisation
+* <del>board tile randomisation</del>
 * AI
 * <del>turns</del>
 * <del>win check and resignation</del>

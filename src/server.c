@@ -371,13 +371,13 @@ int GTSession_SendResponse(GTSession* s, GTConnection* c)
 int GTSession_PrepareGame(GTSession* s, GTBoard* b, GTGame* g, GTAI* ai)
 {
   char file[] =
-   "tiles {"
-  " w, m, h, i, w,"
-  " p, h, w, m, h,"
-  " m, i, p, m, i,"
-  " i, m, p, i, m,"
-  " h, m, w, h, p,"
-  " w, i, h, m, w, }"
+  //  "tiles {"
+  // " w, m, h, i, w,"
+  // " p, h, w, m, h,"
+  // " m, i, p, m, i,"
+  // " i, m, p, i, m,"
+  // " h, m, w, h, p,"
+  // " w, i, h, m, w, }"
   "units {"
   "--,--,G1,--,--,"
   "--,--,--,--,--,"
@@ -385,7 +385,11 @@ int GTSession_PrepareGame(GTSession* s, GTBoard* b, GTGame* g, GTAI* ai)
   "--,--,--,--,--,"
   "--,--,--,--,--,"
   "--,--,g1,--,--, }";
+  int f[] = { 0, 25, 60, 60, 55, 20, 60 };
+  GTBoardConfig conf;
+  memcpy(conf.frequency, f, sizeof(int) * 7);
   GTBoard_Init(b);
+  GTBoard_Generate(b, &conf);
   GTBoard_Parse(b, file);
   GTGame_Init(g, b);
   GTAI_Init(ai);

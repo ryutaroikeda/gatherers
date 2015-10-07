@@ -8,8 +8,39 @@ static char* Test_GTBoard_Init()
   mu_assert(GTBoard_Init(&b) == 0, "init failed");
   mu_assert(b.board[GTBoard_ValidMin] == GTBoard_Empty, 
     ".board[pos] not empty");
+  mu_assert(b.board[GTBoard_InvalidMin] == GTBoard_Invalid,
+    ".board[invalidmin] not invalid");
   mu_assert(GTStack_IsEmpty(&b.stack), ".stack not empty");
   mu_assert(!b.didProduceUnit, ".didProduceUnit wrong");
+  return NULL;
+}
+
+static char* Test_GTBoard_Pos()
+{
+  int pos = GTBoard_Pos(0, GTBoard_Height - 1);
+  mu_assert(pos == GTBoard_ValidMin, "wrong pos");
+  pos = GTBoard_Pos(GTBoard_Width - 1, 0);
+  mu_assert(pos == GTBoard_InvalidMin -1, "wrong pos");
+  return NULL;
+}
+
+static char* Test_GTBoard_Rank()
+{
+  int pos;
+  pos = GTBoard_Pos(0, 0);
+  mu_assert(GTBoard_Rank(pos) == 0, "wrong rank");
+  pos = GTBoard_Pos(GTBoard_Width - 1, GTBoard_Height - 1);
+  mu_assert(GTBoard_Rank(pos) == GTBoard_Width - 1, "wrong rank");
+  return NULL;
+}
+
+static char* Test_GTBoard_File()
+{
+  int pos;
+  pos = GTBoard_Pos(0, 0);
+  mu_assert(GTBoard_File(pos) == 0, "wrong file");
+  pos = GTBoard_Pos(GTBoard_Width - 1, GTBoard_Height - 1);
+  mu_assert(GTBoard_File(pos) == GTBoard_Height - 1, "wrong file");
   return NULL;
 }
 
@@ -505,6 +536,9 @@ static char* Test_All()
 {
   mu_suite_start();
   mu_run_test(Test_GTBoard_Init);
+  mu_run_test(Test_GTBoard_Pos);
+  mu_run_test(Test_GTBoard_Rank);
+  mu_run_test(Test_GTBoard_File);
   mu_run_test(Test_GTBoard_IsEqual);
   mu_run_test(Test_GTBoard_IsValid);
   mu_run_test(Test_GTBoard_IsEmpty);

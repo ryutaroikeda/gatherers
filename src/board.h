@@ -54,11 +54,13 @@ enum
 {
   GTBoard_Width = 5,
   GTBoard_Height = 6,
-  GTBoard_WidthMax = 1 + GTBoard_Width + 1,
-  GTBoard_HeightMax = 1 + GTBoard_Height + 1,
+  GTBoard_HMargin = 1,
+  GTBoard_VMargin = 2,
+  GTBoard_WidthMax = GTBoard_HMargin + GTBoard_Width + GTBoard_HMargin,
+  GTBoard_HeightMax = GTBoard_VMargin + GTBoard_Height + GTBoard_VMargin,
   GTBoard_Size = GTBoard_WidthMax * GTBoard_HeightMax,
-  GTBoard_ValidMin = GTBoard_WidthMax + 1,
-  GTBoard_InvalidMin = GTBoard_Size - GTBoard_WidthMax - 1,
+  GTBoard_ValidMin = (GTBoard_VMargin * GTBoard_WidthMax) + GTBoard_HMargin,
+  GTBoard_InvalidMin = GTBoard_Size - GTBoard_ValidMin,
   // for .board
   GTBoard_Empty = -1,
   GTBoard_Invalid = -2,
@@ -97,6 +99,11 @@ struct_type(GTBoard);
 
 #define GTBoard_Pos(rank, file) \
 (GTBoard_ValidMin + (rank) + ((GTBoard_Height - 1 - (file)) * GTBoard_WidthMax))
+
+#define GTBoard_Rank(pos) (((pos) % GTBoard_WidthMax) - GTBoard_HMargin)
+
+#define GTBoard_File(pos) \
+(GTBoard_Height - 1 - (((pos) / GTBoard_WidthMax) - GTBoard_VMargin))
 
 int GTBoard_Init(GTBoard* b);
 // return 1 if the boards are equal, except for err, stack, and entries

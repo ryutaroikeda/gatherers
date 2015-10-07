@@ -2,12 +2,11 @@
 #define _GTAI_H_
 
 #include "types.h"
+#include "board.h"
 #include "cmdline.h"
 
 #define enum_type(t) typedef enum t t
 #define struct_type(t) typedef struct t t
-
-struct GTBoard;
 
 enum
 {
@@ -43,28 +42,35 @@ struct GTAIMoves
 };
 struct_type(GTAIMoves);
 
-enum GTAIThreatType {
-  GTAIThreatType_None,
-  GTAIThreatType_Plain,
-  GTAIThreatType_Wood,
-  GTAIThreatType_Horse,
-  GTAIThreatType_Iron,
-  GTAIThreatType_Lake,
-  GTAIThreatType_Mountain,
-  GTAIThreatType_Gatherer,
-  GTAIThreatType_Archer,
-  GTAIThreatType_Cavalry,
-  GTAIThreatType_Spearman,
-  GTAIThreatType_Fortress,
-  GTAIThreatType_Size
-};
-enum_type(GTAIThreatType);
-
 int GTAIMoves_Init(GTAIMoves* m);
 // generate legal moves for unit
 int GTAIMoves_Generate(GTAIMoves* m, const struct GTBoard* b, int unit);
 // generate legal moves for player p
 int GTAIMoves_GenerateAll(GTAIMoves* m, const struct GTBoard* b, GTPlayer p);
+
+// enum GTAIThreatType {
+//   GTAIThreatType_None,
+//   GTAIThreatType_Plain,
+//   GTAIThreatType_Wood,
+//   GTAIThreatType_Horse,
+//   GTAIThreatType_Iron,
+//   GTAIThreatType_Lake,
+//   GTAIThreatType_Mountain,
+//   GTAIThreatType_Gatherer,
+//   GTAIThreatType_Archer,
+//   GTAIThreatType_Cavalry,
+//   GTAIThreatType_Spearman,
+//   GTAIThreatType_Fortress,
+//   GTAIThreatType_Size
+// };
+// enum_type(GTAIThreatType);
+
+struct GTAIThreats {
+  int threat[GTBoard_Size];
+};
+struct_type(GTAIThreats);
+
+int GTAIThreats_Init(GTAIThreats* t);
 
 struct GTAI
 {
