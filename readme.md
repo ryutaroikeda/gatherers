@@ -67,12 +67,15 @@ Archers can perform a ranged attack on enemy units up to two tiles away. To perf
 ### Mountains
 A cavalryman must stop moving if it lands on a mountain tile. An archer cannot perform a ranged attack over mountains. If the ranged attack is over an unrevealed tile, that tile is revealed. If it is a mountain, the ranged attack fails.
 
+### Fortress
+A fortress is a special kind of gatherer. It cannot move, but can perform ranged attacks up to one tile away and produce units.
+
 ## To do
 * <del>server</del>
 * <del>client javascript</del>
 * <del>user manual</del>
 * <del>board tile randomisation</del>
-* AI
+* <del>AI</del>
 * <del>turns</del>
 * <del>win check and resignation</del>
 * <del>command line interface</del>

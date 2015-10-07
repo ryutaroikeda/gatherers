@@ -121,6 +121,7 @@ int GTAI_Init(GTAI* ai)
 {
   ai->p = GTPlayer_None;
   ai->b = NULL;
+  ai->ai = NULL;
   ai->err = GTAIError_None;
   return 0;
 }
@@ -387,5 +388,34 @@ int GTAI_PlayRandom(GTAI* ai, GTCommand* c)
   int unit = rand() % m.unitSize;
   int move = rand() % m.moveSize[unit];
   GTAIMove_ToCommand(&m.moves[unit][move], ai->b, c);
+  return 0;
+}
+
+int GTAI_ThreatPlayer(GTAI* ai, GTCommand* c)
+{
+  GTAIMoves m;
+  GTAIMoves_Init(&m);
+  GTAIMoves_GenerateAll(&m, ai->b, ai->p);
+  if (m.unitSize == 0) {
+    c->cmd = GTCommandType_Done;
+    return 0;
+  }
+  GTBoard brd;
+  GTBoard_Init(&brd);
+  GTAI_CopyBoard(&brd, ai->b);
+  int i, j;
+  float bestScore = - FLT_MAX;
+  GTAIMove* best = &m.moves[0][0];
+  for (i = 0; i < m.unitSize; i++) {
+    for (j = 0; j < m.moveSize[i]; j++) {
+      GTAIMove* move = &m.moves[i][j];
+      float score = GTAI_ScoreMove(ai->p, &brd, move);
+      if (score >= bestScore) {
+        bestScore = score;
+        best = move;
+      }
+    }
+  }
+  GTAIMove_ToCommand(best, ai->b, c);
   return 0;
 }

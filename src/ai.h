@@ -77,11 +77,16 @@ int GTAIThreats_Count(GTAIThreats* t, const GTBoard* b, const GTUnit* u);
 
 int GTAIThreats_CountAll(GTAIThreats* t, const GTBoard* b, GTPlayer p);
 
+struct GTAI;
+
+typedef int (*GTAIPlayer)(struct GTAI* ai, GTCommand* c);
+
 struct GTAI
 {
   GTPlayer p;
   struct GTBoard* b;
   GTAIMoves* m;
+  GTAIPlayer ai;
   GTAIError err;
 };
 struct_type(GTAI);
@@ -93,6 +98,8 @@ int GTAI_Random(GTCommand* c);
 int GTAI_TryScorePlayer(GTCommand* c);
 
 int GTAI_PlayRandom(GTAI* ai, GTCommand* c);
+
+int GTAI_ThreatPlayer(GTAI* ai, GTCommand* c);
 
 #undef enum_type
 #undef struct_type

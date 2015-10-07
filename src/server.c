@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <time.h>
 #include <unistd.h>
 
 // static const char* httpMethod[GTHttpMethod_Size] =
@@ -299,7 +300,7 @@ int GTSession_HandleAI(GTSession* s, GTWriter* w)
     GTNetCommand nc;
     GTNetCommand_Init(&nc);
     nc.type = GTNetCommandType_Game;
-    GTAI_PlayRandom(s->ai, &nc.game);
+    (*s->ai->ai)(s->ai, &nc.game);
     GTCommand_Write(&nc.game, w);
     GTSession_DoCommand(s, &nc, w);
   }
@@ -370,6 +371,7 @@ int GTSession_SendResponse(GTSession* s, GTConnection* c)
 
 int GTSession_PrepareGame(GTSession* s, GTBoard* b, GTGame* g, GTAI* ai)
 {
+  srand(time(NULL));
   char file[] =
   //  "tiles {"
   // " w, m, h, i, w,"
@@ -385,7 +387,7 @@ int GTSession_PrepareGame(GTSession* s, GTBoard* b, GTGame* g, GTAI* ai)
   "--,--,--,--,--,"
   "--,--,--,--,--,"
   "--,--,g1,--,--, }";
-  int f[] = { 0, 25, 60, 60, 55, 20, 60 };
+  int f[] = { 0, 20, 60, 60, 55, 15, 60 };
   GTBoardConfig conf;
   memcpy(conf.frequency, f, sizeof(int) * 7);
   GTBoard_Init(b);
@@ -395,6 +397,7 @@ int GTSession_PrepareGame(GTSession* s, GTBoard* b, GTGame* g, GTAI* ai)
   GTAI_Init(ai);
   ai->p = GTPlayer_White;
   ai->b = b;
+  ai->ai = &GTAI_ThreatPlayer;
   s->b = b;
   s->g = g;
   s->ai = ai;
